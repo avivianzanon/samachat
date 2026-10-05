@@ -42,7 +42,7 @@ const useStyles = makeStyles(theme => ({
     color: theme.palette.text.secondary
   },
   switchBase: {
-    color: "rgba(15, 23, 42, 0.28)",
+    color: "#e2e8f0",
     "&$switchChecked": {
       color: "#FF1919",
       "& + $switchTrack": {
@@ -53,7 +53,7 @@ const useStyles = makeStyles(theme => ({
   },
   switchChecked: {},
   switchTrack: {
-    backgroundColor: "rgba(15, 23, 42, 0.18)",
+    backgroundColor: "#64748b",
     opacity: 1,
   },
   embeddedActions: {
