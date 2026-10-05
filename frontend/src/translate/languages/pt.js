@@ -360,7 +360,7 @@ const messages = {
           message: "Mensagem de",
         },
         tabs: {
-          open: { title: "Atendimentos" },
+          open: { title: "Conversas" },
           closed: { title: "Resolvidos" },
           search: { title: "Busca" },
         },
@@ -1168,7 +1168,7 @@ const messages = {
       messagesInput: {
         placeholderOpen: "Digite uma mensagem ou tecle ''/'' para utilizar as respostas rápidas cadastrada",
         placeholderClosed:
-          "Reabra ou aceite esse ticket para enviar uma mensagem.",
+          "Para responder, clique no icone de pessoa (Humano) no topo da conversa e assuma o atendimento.",
         signMessage: "Assinar",
         audioPermissionDenied:
           "O microfone está bloqueado neste navegador. Libere a permissão de microfone para gravar áudio.",

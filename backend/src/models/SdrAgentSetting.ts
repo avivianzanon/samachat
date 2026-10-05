@@ -22,7 +22,7 @@ class SdrAgentSetting extends Model<SdrAgentSetting> {
   @Column
   isEnabled: boolean;
 
-  @Default(false)
+  @Default(true)
   @Column
   autoEnableForNewTickets: boolean;
 

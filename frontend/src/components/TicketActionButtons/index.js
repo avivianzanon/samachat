@@ -11,6 +11,7 @@ import TicketOptionsMenu from "../TicketOptionsMenu";
 import ButtonWithSpinner from "../ButtonWithSpinner";
 import toastError from "../../errors/toastError";
 import { AuthContext } from "../../context/Auth/AuthContext";
+import SdrHandoffButtons from "../SdrHandoffButtons";
 
 const useStyles = makeStyles(theme => ({
 	actionButtons: {
@@ -83,6 +84,7 @@ const TicketActionButtons = ({ ticket }) => {
 
 	return (
 		<div className={classes.actionButtons}>
+			<SdrHandoffButtons ticket={ticket} />
 			{ticket.status === "closed" && (
 				<ButtonWithSpinner
 					loading={loading}
@@ -95,24 +97,6 @@ const TicketActionButtons = ({ ticket }) => {
 			)}
 			{ticket.status === "open" && (
 				<>
-					<ButtonWithSpinner
-						loading={loading}
-						startIcon={<Replay />}
-						size="small"
-						className={classes.secondaryActionButton}
-						onClick={e => handleUpdateTicketStatus(e, "pending", null)}
-					>
-						{i18n.t("messagesList.header.buttons.return")}
-					</ButtonWithSpinner>
-					<ButtonWithSpinner
-						loading={loading}
-						size="small"
-						variant="contained"
-						className={classes.primaryActionButton}
-						onClick={e => handleUpdateTicketStatus(e, "closed", user?.id)}
-					>
-						{i18n.t("messagesList.header.buttons.resolve")}
-					</ButtonWithSpinner>
 					<IconButton className={classes.menuButton} onClick={handleOpenTicketOptionsMenu}>
 						<MoreVert />
 					</IconButton>
@@ -123,17 +107,6 @@ const TicketActionButtons = ({ ticket }) => {
 						handleClose={handleCloseTicketOptionsMenu}
 					/>
 				</>
-			)}
-			{ticket.status === "pending" && (
-				<ButtonWithSpinner
-					loading={loading}
-					size="small"
-					variant="contained"
-					className={classes.primaryActionButton}
-					onClick={e => handleUpdateTicketStatus(e, "open", user?.id)}
-				>
-					{i18n.t("messagesList.header.buttons.accept")}
-				</ButtonWithSpinner>
 			)}
 		</div>
 	);

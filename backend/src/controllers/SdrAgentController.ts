@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 import AppError from "../errors/AppError";
 import GenerateSdrPromptService from "../services/SdrAgentServices/GenerateSdrPromptService";
 import SimulateSdrAgentService from "../services/SdrAgentServices/SimulateSdrAgentService";
+import { parseAllowedNumbers } from "../services/SdrAgentServices/policy";
 import {
   getHandoffState,
   setHandoff
@@ -55,6 +56,19 @@ export const updateSettings = async (req: Request, res: Response) => {
   });
 };
 
+// Resumo do agente para a lista de conversas (qualquer atendente logado pode ver):
+// a tela usa isso para mostrar "IA" ou "Humano" em cada conversa.
+export const publicStatus = async (_req: Request, res: Response) => {
+  const s = await getSdrAgentSettings();
+  return res.json({
+    isEnabled: s.isEnabled,
+    hasPrompt: Boolean(effectivePrompt(s)),
+    autoEnableForNewTickets: s.autoEnableForNewTickets,
+    testMode: s.testMode,
+    allowedNumbers: s.testMode ? parseAllowedNumbers(s.allowedNumbers) : []
+  });
+};
+
 // Quem esta atendendo esta conversa (IA ou humano) e por que.
 export const showTicketHandoff = async (req: Request, res: Response) =>
   res.json(await getHandoffState(Number(req.params.ticketId)));
@@ -65,7 +79,9 @@ export const setTicketHandoff = async (req: Request, res: Response) => {
     Yup.object().shape({ mode: Yup.string().oneOf(["ai", "human"]).required() }),
     req.body
   );
-  return res.json(await setHandoff(Number(req.params.ticketId), req.body.mode));
+  return res.json(
+    await setHandoff(Number(req.params.ticketId), req.body.mode, Number(req.user.id))
+  );
 };
 
 export const simulate = async (req: Request, res: Response) => {

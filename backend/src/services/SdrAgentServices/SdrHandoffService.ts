@@ -1,5 +1,4 @@
 import AppError from "../../errors/AppError";
-import { getIO } from "../../libs/socket";
 import ShowTicketService from "../TicketServices/ShowTicketService";
 import UpdateTicketService from "../TicketServices/UpdateTicketService";
 import { decideSdrReply } from "./policy";
@@ -41,12 +40,13 @@ export const getHandoffState = async (ticketId: number): Promise<HandoffState> =
 };
 
 // Passa a conversa para a IA ou para um humano.
-// - human: a IA para de responder neste atendimento (a equipe aceita e atende).
+// - human: a IA para de responder e a conversa passa para quem clicou.
 // - ai: a IA volta a responder; se um atendente estava com a conversa, ela sai
 //   do nome dele e volta para "Aguardando".
 export const setHandoff = async (
   ticketId: number,
-  mode: HandoffMode
+  mode: HandoffMode,
+  userId?: number
 ): Promise<HandoffState> => {
   const ticket = await ShowTicketService(ticketId);
 
@@ -57,13 +57,13 @@ export const setHandoff = async (
       ticketId
     });
   } else if (mode === "human") {
+    // Assumir: a IA para e a conversa passa para quem clicou, ja liberada para
+    // responder (nao existe mais o passo de "aceitar").
     await ticket.update({ sdrAgentEnabled: false });
-    await ticket.reload({ include: ["contact", "queue", "whatsapp", "user", "tags"] });
-    getIO()
-      .to(ticket.status)
-      .to("notification")
-      .to(String(ticket.id))
-      .emit("ticket", { action: "update", ticket });
+    await UpdateTicketService({
+      ticketData: { status: "open", userId },
+      ticketId
+    });
   } else {
     throw new AppError("ERR_SDR_INVALID_HANDOFF_MODE", 400);
   }

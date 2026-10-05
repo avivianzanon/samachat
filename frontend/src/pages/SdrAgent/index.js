@@ -12,6 +12,7 @@ import AgentTab from "./AgentTab";
 import friendlyError from "./friendlyError";
 import KnowledgeBaseTab from "./KnowledgeBaseTab";
 import useStyles from "./styles";
+import { invalidateSdrStatus } from "../../hooks/useSdrStatus";
 
 const emptyForm = {
   isEnabled: false,
@@ -111,6 +112,7 @@ const SdrAgent = () => {
       const { data } = await api.put("/sdr-agent/settings", toPayload(form));
       setForm(toForm(data));
       setDirty(false);
+      invalidateSdrStatus();
       toast.success("Configuracao do agente salva.");
       return true;
     } catch (err) {

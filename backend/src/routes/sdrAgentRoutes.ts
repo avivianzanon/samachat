@@ -17,6 +17,7 @@ sdrAgentRoutes.post("/sdr-agent/generate-prompt", ...manage, SdrAgentController.
 
 // Quem atende cada conversa (IA ou humano). Qualquer atendente pode consultar e
 // passar a conversa: faz parte do atendimento do dia a dia, nao da configuracao.
+sdrAgentRoutes.get("/sdr-agent/status", isAuth, SdrAgentController.publicStatus);
 sdrAgentRoutes.get("/tickets/:ticketId/sdr-agent", isAuth, SdrAgentController.showTicketHandoff);
 sdrAgentRoutes.put("/tickets/:ticketId/sdr-agent", isAuth, SdrAgentController.setTicketHandoff);
 

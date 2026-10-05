@@ -248,10 +248,13 @@ const reducer = (state, action) => {
 		setSelectedTicketIds([]);
 	}, [status, searchParam, dispatch, showAll, selectedQueueIds, selectedTagIds]);
 
+	// "active" = todas as conversas em andamento (sem separar aceitas e nao aceitas)
+	const apiStatus = status === "active" ? "open,pending" : status;
+
 	const { tickets, hasMore, loading } = useTickets({
 		pageNumber,
 		searchParam,
-		status,
+		status: apiStatus,
 		showAll,
 		queueIds: JSON.stringify(selectedQueueIds),
 		tagIds: JSON.stringify(selectedTagIds || []),
@@ -283,7 +286,10 @@ const reducer = (state, action) => {
 			ticket.queueId && selectedQueueIds.indexOf(ticket.queueId) === -1;
 
 		socket.on("connect", () => {
-			if (status) {
+			if (status === "active") {
+				socket.emit("joinTickets", "open");
+				socket.emit("joinTickets", "pending");
+			} else if (status) {
 				socket.emit("joinTickets", status);
 			} else {
 				socket.emit("joinNotification");

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 
 import { Button, Tooltip, Typography } from "@material-ui/core";
 import { makeStyles } from "@material-ui/core/styles";
@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 
 import api from "../../services/api";
 import toastError from "../../errors/toastError";
+import { AuthContext } from "../../context/Auth/AuthContext";
 import ConfirmationModal from "../ConfirmationModal";
 
 const useStyles = makeStyles(theme => ({
@@ -71,18 +72,20 @@ const useStyles = makeStyles(theme => ({
 
 // Por que a conversa esta com a equipe, em linguagem simples.
 const REASONS = {
-	agente_desligado: "O agente esta desligado em Treinamento da IA.",
+	agente_desligado: "O agente de IA esta desligado (Treinamento da IA).",
 	sem_prompt: "O agente ainda nao tem prompt (Treinamento da IA).",
-	atendente_humano: "Um atendente assumiu a conversa.",
-	desligado_no_ticket: "Passada para a equipe. Aceite o atendimento para responder.",
+	atendente_humano: "Um atendente esta com esta conversa.",
+	desligado_no_ticket: "A equipe esta com esta conversa. A IA nao responde.",
 	ticket_nao_marcado: "A equipe atende primeiro. Clique em IA para a IA assumir.",
 	modo_teste_numero_nao_listado: "Modo teste: este numero nao esta na lista da IA.",
 };
 
-// Botao "IA | Humano" do atendimento: mostra quem esta respondendo esta
-// conversa e deixa passar para a IA ou para a equipe com um clique.
+// Barra "IA | Humano" da conversa: mostra quem esta respondendo e deixa trocar
+// com um clique. "Humano" assume a conversa para voce (ja pode responder; nao
+// existe mais o passo de "aceitar"). "IA" devolve a conversa para o agente.
 const SdrHandoff = ({ ticket }) => {
 	const classes = useStyles();
+	const { user } = useContext(AuthContext);
 	const [info, setInfo] = useState(null);
 	const [busy, setBusy] = useState(false);
 	const [confirmOpen, setConfirmOpen] = useState(false);
@@ -92,18 +95,19 @@ const SdrHandoff = ({ ticket }) => {
 			const { data } = await api.get(`/tickets/${ticket.id}/sdr-agent`);
 			setInfo(data);
 		} catch (err) {
-			setInfo(null); // sem permissao ou agente indisponivel: nao mostra nada
+			setInfo(null);
 		}
 	}, [ticket.id]);
 
-	// Recarrega quando a conversa muda (aceitar, devolver, passar para IA...).
 	useEffect(() => {
 		load();
 	}, [load, ticket.status, ticket.userId, ticket.sdrAgentEnabled]);
 
 	if (!info || ticket.status === "closed") return null;
-	// Agente nunca configurado e conversa sem marcacao: nao polui a tela.
-	if (!info.agentEnabled && ticket.sdrAgentEnabled === null) return null;
+
+	const aiAvailable = info.agentEnabled && info.hasPrompt;
+	const mine = ticket.status === "open" && ticket.userId === user?.id;
+	const unassigned = ticket.status === "pending" || !ticket.userId;
 
 	const change = async mode => {
 		setBusy(true);
@@ -113,7 +117,7 @@ const SdrHandoff = ({ ticket }) => {
 			toast.success(
 				mode === "ai"
 					? "A IA voltou a atender esta conversa."
-					: "Conversa passada para a equipe. Aceite o atendimento para responder."
+					: "Voce assumiu a conversa. A IA parou de responder."
 			);
 		} catch (err) {
 			toastError(err);
@@ -122,48 +126,68 @@ const SdrHandoff = ({ ticket }) => {
 	};
 
 	const onAi = () => {
-		if (info.mode === "ai" || busy) return;
+		if (!aiAvailable || info.mode === "ai" || busy) return;
 		// Se um atendente esta com a conversa, avisa que ela sai do nome dele.
-		if (ticket.status === "open") setConfirmOpen(true);
+		if (ticket.userId) setConfirmOpen(true);
 		else change("ai");
 	};
 
+	// Assumir tambem vale para conversa sem dono (ex.: agente desligado).
 	const onHuman = () => {
-		if (info.mode === "human" || busy) return;
+		if (busy || (info.mode === "human" && mine)) return;
 		change("human");
 	};
+
+	let caption;
+	if (info.mode === "ai") {
+		caption = "A IA esta respondendo este cliente. Clique em Humano para assumir.";
+	} else if (mine) {
+		caption = "Voce esta atendendo esta conversa.";
+	} else if (unassigned) {
+		caption = aiAvailable
+			? "Ninguem assumiu ainda. Clique em Humano para responder, ou em IA para a IA atender."
+			: `${REASONS[info.reason] || "A equipe esta atendendo."} Clique em Humano para responder.`;
+	} else {
+		caption = REASONS[info.reason] || "A equipe esta atendendo.";
+	}
 
 	return (
 		<div className={classes.root}>
 			<div className={classes.texts}>
 				<span className={classes.label}>Quem esta atendendo esta conversa</span>
-				<Typography className={classes.caption}>
-					{info.mode === "ai"
-						? "A IA esta respondendo este cliente. Clique em Humano para a equipe assumir."
-						: REASONS[info.reason] || "A equipe esta atendendo."}
-				</Typography>
+				<Typography className={classes.caption}>{caption}</Typography>
 			</div>
 			<div className={classes.group}>
 				<span className={classes.segment}>
-					<Tooltip title="A IA responde o cliente automaticamente">
-						<Button
-							size="small"
-							className={`${classes.option} ${info.mode === "ai" ? classes.optionAi : ""}`}
-							onClick={onAi}
-							disabled={busy}
-						>
-							IA
-						</Button>
+					<Tooltip
+						title={
+							aiAvailable
+								? "A IA responde o cliente automaticamente"
+								: "Ligue o agente e crie o prompt em Treinamento da IA"
+						}
+					>
+						<span>
+							<Button
+								size="small"
+								className={`${classes.option} ${info.mode === "ai" ? classes.optionAi : ""}`}
+								onClick={onAi}
+								disabled={busy || !aiAvailable}
+							>
+								IA
+							</Button>
+						</span>
 					</Tooltip>
-					<Tooltip title="A IA para e a equipe atende">
-						<Button
-							size="small"
-							className={`${classes.option} ${info.mode === "human" ? classes.optionHuman : ""}`}
-							onClick={onHuman}
-							disabled={busy}
-						>
-							Humano
-						</Button>
+					<Tooltip title="Voce assume a conversa e a IA para">
+						<span>
+							<Button
+								size="small"
+								className={`${classes.option} ${mine || (info.mode === "human" && !unassigned) ? classes.optionHuman : ""}`}
+								onClick={onHuman}
+								disabled={busy}
+							>
+								Humano
+							</Button>
+						</span>
 					</Tooltip>
 				</span>
 			</div>
@@ -174,7 +198,7 @@ const SdrHandoff = ({ ticket }) => {
 				onClose={setConfirmOpen}
 				onConfirm={() => change("ai")}
 			>
-				A IA volta a responder este cliente e a conversa sai do nome do atendente e volta para "Aguardando".
+				A IA volta a responder este cliente e a conversa sai do nome do atendente.
 			</ConfirmationModal>
 		</div>
 	);
