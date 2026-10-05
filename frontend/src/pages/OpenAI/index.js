@@ -56,6 +56,29 @@ const useStyles = makeStyles(theme => ({
     backgroundColor: "rgba(15, 23, 42, 0.18)",
     opacity: 1,
   },
+  embeddedActions: {
+    display: "flex",
+    gap: 8,
+    justifyContent: "flex-end",
+    flexWrap: "wrap"
+  },
+  testButton: {
+    color: "#b91c1c",
+    borderColor: "#b91c1c",
+    fontWeight: 600,
+    "&.Mui-disabled": {
+      color: "#475569",
+      borderColor: "#94a3b8",
+      backgroundColor: "#f1f5f9"
+    }
+  },
+  saveButton: {
+    fontWeight: 600,
+    "&.Mui-disabled": {
+      color: "#475569",
+      backgroundColor: "#e2e8f0"
+    }
+  },
   embeddedRoot: {
     display: "flex",
     flexDirection: "column",
@@ -276,10 +299,11 @@ const OpenAI = ({ embedded = false }) => {
       )}
 
       {embedded && (
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+        <div className={classes.embeddedActions}>
           <Button
             variant="outlined"
             color="primary"
+            className={classes.testButton}
             onClick={handleTest}
             disabled={testing || loading || !settings.isActive || !hasValidKey}
           >
@@ -288,6 +312,7 @@ const OpenAI = ({ embedded = false }) => {
           <Button
             variant="contained"
             color="primary"
+            className={classes.saveButton}
             onClick={handleSave}
             disabled={saving || loading}
           >
