@@ -275,6 +275,27 @@ const OpenAI = ({ embedded = false }) => {
         </MainHeader>
       )}
 
+      {embedded && (
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={handleTest}
+            disabled={testing || loading || !settings.isActive || !hasValidKey}
+          >
+            {i18n.t("openai.settings.test")}
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSave}
+            disabled={saving || loading}
+          >
+            {i18n.t("openai.settings.save")}
+          </Button>
+        </div>
+      )}
+
       <Card className={classes.card} variant="outlined">
         <CardContent>
           <Typography variant="h6" className={classes.sectionTitle}>
