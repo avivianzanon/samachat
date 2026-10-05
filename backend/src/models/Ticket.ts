@@ -10,7 +10,8 @@ import {
   HasMany,
   BelongsToMany,
   AutoIncrement,
-  Default
+  Default,
+  DataType
 } from "sequelize-typescript";
 
 import Contact from "./Contact";
@@ -40,6 +41,11 @@ class Ticket extends Model<Ticket> {
   @Default(false)
   @Column
   isGroup: boolean;
+
+  // Agente SDR: null = regra automatica da configuracao; true/false = decisao
+  // explicita para este ticket.
+  @Column(DataType.BOOLEAN)
+  sdrAgentEnabled: boolean | null;
 
   @CreatedAt
   createdAt: Date;

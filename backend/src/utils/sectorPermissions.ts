@@ -69,6 +69,8 @@ export const SECTOR_PERMISSION_KEYS = [
   "schedules.reopen",
   "agenda.view",
   "agenda.manage",
+  "sdrAgent.view",
+  "sdrAgent.manage",
   "flows.view",
   "flows.create",
   "flows.update",
