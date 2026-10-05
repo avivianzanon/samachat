@@ -11,9 +11,22 @@ import ConfirmationModal from "../ConfirmationModal";
 const useStyles = makeStyles(theme => ({
 	root: {
 		display: "flex",
+		alignItems: "center",
+		justifyContent: "space-between",
+		flexWrap: "wrap",
+		gap: theme.spacing(1),
+		flex: "none",
+		margin: theme.spacing(0.5, 0),
+		padding: theme.spacing(1, 1.75),
+		borderRadius: theme.shape.borderRadius + 6,
+		border: `1px solid ${theme.palette.divider}`,
+		backgroundColor: theme.palette.background.paper,
+	},
+	texts: {
+		display: "flex",
 		flexDirection: "column",
-		alignItems: "flex-end",
-		gap: 2,
+		minWidth: 0,
+		flex: "1 1 240px",
 	},
 	group: {
 		display: "inline-flex",
@@ -51,10 +64,8 @@ const useStyles = makeStyles(theme => ({
 		color: "#FFFFFF !important",
 	},
 	caption: {
-		fontSize: "0.7rem",
+		fontSize: "0.8125rem",
 		color: theme.palette.text.secondary,
-		textAlign: "right",
-		maxWidth: 260,
 	},
 }));
 
@@ -124,8 +135,15 @@ const SdrHandoff = ({ ticket }) => {
 
 	return (
 		<div className={classes.root}>
+			<div className={classes.texts}>
+				<span className={classes.label}>Quem esta atendendo esta conversa</span>
+				<Typography className={classes.caption}>
+					{info.mode === "ai"
+						? "A IA esta respondendo este cliente. Clique em Humano para a equipe assumir."
+						: REASONS[info.reason] || "A equipe esta atendendo."}
+				</Typography>
+			</div>
 			<div className={classes.group}>
-				<span className={classes.label}>Atendendo</span>
 				<span className={classes.segment}>
 					<Tooltip title="A IA responde o cliente automaticamente">
 						<Button
@@ -149,11 +167,6 @@ const SdrHandoff = ({ ticket }) => {
 					</Tooltip>
 				</span>
 			</div>
-			<Typography className={classes.caption}>
-				{info.mode === "ai"
-					? "A IA esta respondendo este cliente."
-					: REASONS[info.reason] || "A equipe esta atendendo."}
-			</Typography>
 
 			<ConfirmationModal
 				title="Devolver a conversa para a IA?"

@@ -12,6 +12,7 @@ import MessageInput from "../MessageInput/";
 import TicketHeader from "../TicketHeader";
 import TicketInfo from "../TicketInfo";
 import TicketActionButtons from "../TicketActionButtons";
+import SdrHandoff from "../SdrHandoff";
 import MessagesList from "../MessagesList";
 import api from "../../services/api";
 import { ReplyMessageProvider } from "../../context/ReplyingMessage/ReplyingMessageContext";
@@ -172,6 +173,7 @@ const Ticket = () => {
             </div>
           </TicketHeader>
         </div>
+        <SdrHandoff ticket={ticket} />
         <ReplyMessageProvider>
           <MessagesList
             ticketId={ticketId}

@@ -11,7 +11,6 @@ import TicketOptionsMenu from "../TicketOptionsMenu";
 import ButtonWithSpinner from "../ButtonWithSpinner";
 import toastError from "../../errors/toastError";
 import { AuthContext } from "../../context/Auth/AuthContext";
-import SdrHandoff from "../SdrHandoff";
 
 const useStyles = makeStyles(theme => ({
 	actionButtons: {
@@ -84,7 +83,6 @@ const TicketActionButtons = ({ ticket }) => {
 
 	return (
 		<div className={classes.actionButtons}>
-			<SdrHandoff ticket={ticket} />
 			{ticket.status === "closed" && (
 				<ButtonWithSpinner
 					loading={loading}

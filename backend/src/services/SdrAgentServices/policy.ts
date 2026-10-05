@@ -61,17 +61,18 @@ export const decideSdrReply = (input: {
   if (ticket.isGroup) return { respond: false, reason: "grupo" };
   if (!hasText) return { respond: false, reason: "sem_texto" };
 
-  // Sem prompt nao ha o que seguir: o agente nao responde.
-  if (!String(settings.systemPrompt || "").trim()) {
-    return { respond: false, reason: "sem_prompt" };
-  }
-
   // Humano assumiu: o agente sai de cena, mesmo se estiver marcado.
   if (ticket.userId) return { respond: false, reason: "atendente_humano" };
 
   // Passada para humano nesta conversa: vale sempre, inclusive no modo teste.
   if (ticket.sdrAgentEnabled === false) {
     return { respond: false, reason: "desligado_no_ticket" };
+  }
+
+  // Sem prompt nao ha o que seguir: o agente nao responde. (Fica depois dos
+  // motivos de 'humano': para quem ja esta com a equipe, esse e o motivo util.)
+  if (!String(settings.systemPrompt || "").trim()) {
+    return { respond: false, reason: "sem_prompt" };
   }
 
   // Modo teste: so atende os numeros da lista (e atende todos eles, sem
