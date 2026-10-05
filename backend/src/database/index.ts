@@ -41,6 +41,7 @@ import AgendaSetting from "../models/AgendaSetting";
 import AgendaCloser from "../models/AgendaCloser";
 import AgendaAvailability from "../models/AgendaAvailability";
 import AgendaAppointment from "../models/AgendaAppointment";
+import AgendaEvent from "../models/AgendaEvent";
 
 // eslint-disable-next-line
 const dbConfig = require("../config/database");
@@ -90,7 +91,8 @@ const models = [
   AgendaSetting,
   AgendaCloser,
   AgendaAvailability,
-  AgendaAppointment
+  AgendaAppointment,
+  AgendaEvent
 ];
 
 sequelize.addModels(models);

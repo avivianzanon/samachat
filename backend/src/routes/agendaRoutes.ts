@@ -2,7 +2,10 @@ import express from "express";
 import isAuth from "../middleware/isAuth";
 import checkSectorPermission from "../middleware/checkSectorPermission";
 
+import isAgendaEventsAuth from "../middleware/isAgendaEventsAuth";
+
 import * as AgendaController from "../controllers/AgendaController";
+import * as AgendaEventsController from "../controllers/AgendaEventsController";
 
 const agendaRoutes = express.Router();
 
@@ -25,5 +28,8 @@ agendaRoutes.get("/agenda/appointments", ...view, AgendaController.indexAppointm
 agendaRoutes.post("/agenda/appointments", ...manage, AgendaController.storeAppointment);
 agendaRoutes.put("/agenda/appointments/:id/reschedule", ...manage, AgendaController.reschedule);
 agendaRoutes.put("/agenda/appointments/:id/cancel", ...manage, AgendaController.cancel);
+
+// Eventos externos (no-show etc.): segredo proprio, sem login de usuario.
+agendaRoutes.post("/agenda/events", isAgendaEventsAuth, AgendaEventsController.store);
 
 export default agendaRoutes;
