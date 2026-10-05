@@ -67,6 +67,8 @@ export const SECTOR_PERMISSION_KEYS = [
   "schedules.delete",
   "schedules.cancel",
   "schedules.reopen",
+  "agenda.view",
+  "agenda.manage",
   "flows.view",
   "flows.create",
   "flows.update",
