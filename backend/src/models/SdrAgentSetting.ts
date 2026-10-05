@@ -26,6 +26,10 @@ class SdrAgentSetting extends Model<SdrAgentSetting> {
   @Column
   autoEnableForNewTickets: boolean;
 
+  @Default(false)
+  @Column
+  testMode: boolean;
+
   @Column(DataType.TEXT)
   allowedNumbers: string | null;
 

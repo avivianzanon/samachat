@@ -2,9 +2,12 @@ import * as Yup from "yup";
 import { Request, Response } from "express";
 
 import AppError from "../errors/AppError";
-import Ticket from "../models/Ticket";
+import GenerateSdrPromptService from "../services/SdrAgentServices/GenerateSdrPromptService";
 import SimulateSdrAgentService from "../services/SdrAgentServices/SimulateSdrAgentService";
-import DEFAULT_SDR_PROMPT from "../services/SdrAgentServices/defaultPrompt";
+import {
+  getHandoffState,
+  setHandoff
+} from "../services/SdrAgentServices/SdrHandoffService";
 import {
   effectivePrompt,
   getSdrAgentSettings,
@@ -23,9 +26,7 @@ export const showSettings = async (_req: Request, res: Response) => {
   const settings = await getSdrAgentSettings();
   return res.json({
     ...settings.toJSON(),
-    // O que de fato vai para o modelo (a configuracao pode estar vazia = padrao).
-    effectivePrompt: effectivePrompt(settings),
-    defaultPrompt: DEFAULT_SDR_PROMPT
+    hasPrompt: Boolean(effectivePrompt(settings))
   });
 };
 
@@ -34,6 +35,7 @@ export const updateSettings = async (req: Request, res: Response) => {
     Yup.object().shape({
       isEnabled: Yup.boolean(),
       autoEnableForNewTickets: Yup.boolean(),
+      testMode: Yup.boolean(),
       allowedNumbers: Yup.string().nullable(),
       agentName: Yup.string(),
       companyName: Yup.string(),
@@ -46,21 +48,24 @@ export const updateSettings = async (req: Request, res: Response) => {
     }),
     req.body
   );
-  return res.json(await updateSdrAgentSettings(req.body));
+  const settings = await updateSdrAgentSettings(req.body);
+  return res.json({
+    ...settings.toJSON(),
+    hasPrompt: Boolean(effectivePrompt(settings))
+  });
 };
 
-// Liga (true), desliga (false) ou volta a regra automatica (null) neste ticket.
-export const setTicketAgent = async (req: Request, res: Response) => {
+// Quem esta atendendo esta conversa (IA ou humano) e por que.
+export const showTicketHandoff = async (req: Request, res: Response) =>
+  res.json(await getHandoffState(Number(req.params.ticketId)));
+
+// Passa a conversa para a IA ("ai") ou para um humano ("human").
+export const setTicketHandoff = async (req: Request, res: Response) => {
   await validate(
-    Yup.object().shape({ enabled: Yup.boolean().nullable() }),
+    Yup.object().shape({ mode: Yup.string().oneOf(["ai", "human"]).required() }),
     req.body
   );
-  const ticket = await Ticket.findByPk(req.params.ticketId);
-  if (!ticket) throw new AppError("ERR_NO_TICKET_FOUND", 404);
-
-  const enabled = req.body.enabled === undefined ? null : req.body.enabled;
-  await ticket.update({ sdrAgentEnabled: enabled });
-  return res.json({ ticketId: ticket.id, sdrAgentEnabled: ticket.sdrAgentEnabled });
+  return res.json(await setHandoff(Number(req.params.ticketId), req.body.mode));
 };
 
 export const simulate = async (req: Request, res: Response) => {
@@ -81,4 +86,28 @@ export const simulate = async (req: Request, res: Response) => {
     req.body
   );
   return res.json(await SimulateSdrAgentService(req.body));
+};
+
+// Gerador de prompt com IA (mesmo formulario da BIA SDR).
+export const generatePrompt = async (req: Request, res: Response) => {
+  await validate(
+    Yup.object().shape({
+      sdr_name: Yup.string().required(),
+      role: Yup.string(),
+      company_name: Yup.string().required(),
+      paper_type: Yup.string(),
+      personality: Yup.string(),
+      tone: Yup.string(),
+      prohibited_terms: Yup.string(),
+      philosophy_name: Yup.string(),
+      lead_talk_percentage: Yup.number(),
+      max_lines: Yup.number(),
+      products: Yup.string().required(),
+      differentials: Yup.string().required(),
+      conversion_action: Yup.string(),
+      tools: Yup.string()
+    }),
+    req.body
+  );
+  return res.json(await GenerateSdrPromptService(req.body));
 };

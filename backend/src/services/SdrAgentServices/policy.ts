@@ -1,7 +1,12 @@
 export interface PolicySettings {
   isEnabled: boolean;
+  // Quem atende primeiro uma conversa nova: true = a IA, false = a equipe.
   autoEnableForNewTickets: boolean;
+  // Modo teste: so os numeros da lista sao atendidos pela IA; o resto do chat
+  // segue exatamente como antes.
+  testMode?: boolean;
   allowedNumbers?: string | null;
+  systemPrompt?: string | null;
 }
 
 export interface PolicyTicket {
@@ -28,15 +33,14 @@ export const parseAllowedNumbers = (raw?: string | null): string[] =>
     .map(digits)
     .filter(d => d.length >= MIN_DIGITS);
 
-// O telefone esta na lista de teste? Compara pelo final do numero, para
-// aceitar com ou sem DDI/9o digito (ex.: 5511999998888 x 11999998888).
+// O telefone esta na lista? Compara pelo final do numero, para aceitar com ou
+// sem DDI/9o digito (ex.: 5511999998888 x 11999998888). Lista vazia = ninguem.
 export const numberAllowed = (
   allowed: string[],
   contactNumber?: string | null
 ): boolean => {
-  if (allowed.length === 0) return true;
   const n = digits(contactNumber);
-  if (n.length < MIN_DIGITS) return false;
+  if (allowed.length === 0 || n.length < MIN_DIGITS) return false;
   return allowed.some(a => n.endsWith(a) || a.endsWith(n));
 };
 
@@ -57,19 +61,29 @@ export const decideSdrReply = (input: {
   if (ticket.isGroup) return { respond: false, reason: "grupo" };
   if (!hasText) return { respond: false, reason: "sem_texto" };
 
+  // Sem prompt nao ha o que seguir: o agente nao responde.
+  if (!String(settings.systemPrompt || "").trim()) {
+    return { respond: false, reason: "sem_prompt" };
+  }
+
   // Humano assumiu: o agente sai de cena, mesmo se estiver marcado.
   if (ticket.userId) return { respond: false, reason: "atendente_humano" };
 
+  // Passada para humano nesta conversa: vale sempre, inclusive no modo teste.
   if (ticket.sdrAgentEnabled === false) {
     return { respond: false, reason: "desligado_no_ticket" };
   }
-  const on =
-    ticket.sdrAgentEnabled === true || settings.autoEnableForNewTickets;
-  if (!on) return { respond: false, reason: "ticket_nao_marcado" };
 
-  if (!numberAllowed(parseAllowedNumbers(settings.allowedNumbers), contactNumber)) {
-    return { respond: false, reason: "numero_fora_da_lista_de_teste" };
+  // Modo teste: so atende os numeros da lista (e atende todos eles, sem
+  // precisar marcar a conversa). Quem nao esta na lista nao e afetado.
+  if (settings.testMode) {
+    return numberAllowed(parseAllowedNumbers(settings.allowedNumbers), contactNumber)
+      ? { respond: true }
+      : { respond: false, reason: "modo_teste_numero_nao_listado" };
   }
+
+  const on = ticket.sdrAgentEnabled === true || settings.autoEnableForNewTickets;
+  if (!on) return { respond: false, reason: "ticket_nao_marcado" };
 
   return { respond: true };
 };

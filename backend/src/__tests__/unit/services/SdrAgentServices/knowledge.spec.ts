@@ -59,7 +59,7 @@ describe("similaridade", () => {
 });
 
 describe("contexto para o prompt", () => {
-  const hit = { fileId: 1, fileName: "precos.txt", content: "Plano Start: R$ 997/mes", score: 0.61 };
+  const hit = { fileId: 1, fileName: "precos.txt", category: "Preços e planos", content: "Plano Start: R$ 997/mes", score: 0.61 };
 
   it("sem trechos, nao injeta nada", () => {
     expect(formatKnowledgeContext([])).toBe("");
@@ -68,7 +68,7 @@ describe("contexto para o prompt", () => {
   it("formata os trechos com a fonte e a instrucao de nao inventar", () => {
     const out = formatKnowledgeContext([hit]);
     expect(out).toContain("<knowledge_context>");
-    expect(out).toContain("[1] (fonte: precos.txt)");
+    expect(out).toContain("[1] (fonte: precos.txt, categoria: Preços e planos)");
     expect(out).toContain("Plano Start: R$ 997/mes");
     expect(out).toMatch(/Nao invente/);
   });

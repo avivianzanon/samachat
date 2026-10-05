@@ -24,6 +24,9 @@ class SdrKnowledgeFile extends Model<SdrKnowledgeFile> {
   name: string;
 
   @Column
+  category: string;
+
+  @Column
   charCount: number;
 
   @Column

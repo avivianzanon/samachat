@@ -17,6 +17,7 @@ interface CachedChunk {
   id: number;
   fileId: number;
   fileName: string;
+  category: string;
   content: string;
   vector: Float32Array;
   norm: number;
@@ -32,7 +33,7 @@ export const invalidateKnowledgeCache = (): void => {
 const loadCache = async (): Promise<CachedChunk[]> => {
   if (cache) return cache;
   const rows = await SdrKnowledgeChunk.findAll({
-    include: [{ model: SdrKnowledgeFile, attributes: ["id", "name"] }],
+    include: [{ model: SdrKnowledgeFile, attributes: ["id", "name", "category"] }],
     order: [["fileId", "ASC"], ["position", "ASC"]]
   });
   cache = rows.map(r => {
@@ -41,6 +42,7 @@ const loadCache = async (): Promise<CachedChunk[]> => {
       id: r.id,
       fileId: r.fileId,
       fileName: r.file ? r.file.name : "",
+      category: r.file ? r.file.category : "",
       content: r.content,
       vector,
       norm: norm(vector)
@@ -55,11 +57,12 @@ export const listKnowledgeFiles = (): Promise<SdrKnowledgeFile[]> =>
   >;
 
 export const addDocument = async (
-  input: { name: string; content: string },
+  input: { name: string; content: string; category?: string },
   embed: EmbedFn = createEmbeddings
 ): Promise<SdrKnowledgeFile> => {
   const name = String(input.name || "").trim();
   const content = String(input.content || "").trim();
+  const category = String(input.category || "").trim().slice(0, 80) || "Outros";
   if (!name) throw new AppError("ERR_SDR_KB_NAME_REQUIRED", 400);
   if (!content) throw new AppError("ERR_SDR_KB_EMPTY", 400);
   if (content.length > MAX_DOCUMENT_CHARS) {
@@ -76,7 +79,7 @@ export const addDocument = async (
 
   const file = await sequelize.transaction(async transaction => {
     const created = await SdrKnowledgeFile.create(
-      { name, charCount: content.length, chunkCount: chunks.length } as any,
+      { name, category, charCount: content.length, chunkCount: chunks.length } as any,
       { transaction }
     );
     await SdrKnowledgeChunk.bulkCreate(
@@ -105,6 +108,7 @@ export const removeDocument = async (id: number): Promise<void> => {
 export interface KnowledgeHit {
   fileId: number;
   fileName: string;
+  category: string;
   content: string;
   score: number;
 }
@@ -129,6 +133,7 @@ export const searchKnowledge = async (
   ).map(({ item, score }) => ({
     fileId: item.fileId,
     fileName: item.fileName,
+    category: item.category,
     content: item.content,
     score: Math.round(score * 1000) / 1000
   }));
@@ -138,7 +143,7 @@ export const searchKnowledge = async (
 export const formatKnowledgeContext = (hits: KnowledgeHit[]): string => {
   if (hits.length === 0) return "";
   const body = hits
-    .map((h, i) => `[${i + 1}] (fonte: ${h.fileName})\n${h.content}`)
+    .map((h, i) => `[${i + 1}] (fonte: ${h.fileName}, categoria: ${h.category})\n${h.content}`)
     .join("\n\n");
   return (
     "<knowledge_context>\n" +

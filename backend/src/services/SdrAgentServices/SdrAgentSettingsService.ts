@@ -1,10 +1,10 @@
 import AppError from "../../errors/AppError";
 import SdrAgentSetting from "../../models/SdrAgentSetting";
-import DEFAULT_SDR_PROMPT from "./defaultPrompt";
 
 export interface SdrAgentSettingsData {
   isEnabled?: boolean;
   autoEnableForNewTickets?: boolean;
+  testMode?: boolean;
   allowedNumbers?: string | null;
   agentName?: string;
   companyName?: string;
@@ -26,11 +26,9 @@ const ensureRow = async (): Promise<SdrAgentSetting> => {
 
 export const getSdrAgentSettings = (): Promise<SdrAgentSetting> => ensureRow();
 
-// Prompt efetivo: o salvo na configuracao ou, se vazio, o padrao da ARKOM.
+// O prompt e SEMPRE o que foi treinado na tela (nao existe prompt padrao).
 export const effectivePrompt = (row: SdrAgentSetting): string =>
-  row.systemPrompt && row.systemPrompt.trim()
-    ? row.systemPrompt
-    : DEFAULT_SDR_PROMPT;
+  String(row.systemPrompt || "").trim();
 
 const inRange = (value: number, min: number, max: number, code: string) => {
   if (!Number.isFinite(value) || value < min || value > max) {
@@ -60,7 +58,7 @@ export const updateSdrAgentSettings = async (
     throw new AppError("ERR_SDR_INVALID_NAME", 400);
   }
 
-  // Texto vazio volta a significar "usar o padrao".
+  // Texto vazio = sem prompt (o agente nao responde ate treinar um).
   if (patch.systemPrompt !== undefined && !String(patch.systemPrompt || "").trim()) {
     patch.systemPrompt = null;
   }

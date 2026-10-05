@@ -3,7 +3,7 @@ import CreateOrUpdateContactService from "../ContactServices/CreateOrUpdateConta
 import { ChatMessage } from "./agentLoop";
 import { createOpenAIChat, isOpenAIReady } from "./openAIChat";
 import { converse } from "./RunSdrAgentService";
-import { getSdrAgentSettings } from "./SdrAgentSettingsService";
+import { effectivePrompt, getSdrAgentSettings } from "./SdrAgentSettingsService";
 
 interface Input {
   messages: { role: "user" | "assistant"; content: string }[];
@@ -28,6 +28,9 @@ const SimulateSdrAgentService = async ({
   }
 
   const settings = await getSdrAgentSettings();
+  if (!effectivePrompt(settings)) {
+    throw new AppError("ERR_SDR_NO_PROMPT", 400);
+  }
   const name = contactName || "Lead de teste";
   const number = contactNumber || "5500000000001";
 

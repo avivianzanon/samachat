@@ -25,6 +25,7 @@ export const store = async (req: Request, res: Response) => {
   await validate(
     Yup.object().shape({
       name: Yup.string().required().max(200),
+      category: Yup.string().max(80),
       content: Yup.string().required()
     }),
     req.body
