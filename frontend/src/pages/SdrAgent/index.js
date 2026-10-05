@@ -22,7 +22,7 @@ import MainContainer from "../../components/MainContainer";
 import MainHeader from "../../components/MainHeader";
 import MainHeaderButtonsWrapper from "../../components/MainHeaderButtonsWrapper";
 import Title from "../../components/Title";
-import toastError from "../../errors/toastError";
+import friendlyError from "./friendlyError";
 import api from "../../services/api";
 import KnowledgeBaseTab from "./KnowledgeBaseTab";
 
@@ -180,6 +180,9 @@ const toPayload = form => ({
 });
 
 const describeTool = call => {
+  if (call.name === "knowledge") {
+    return `Consultou a base: ${call.file} (${Math.round(call.score * 100)}%)`;
+  }
   const label = TOOL_LABELS[call.name] || call.name;
   const appointment = call.result && call.result.appointment;
   if (appointment) {
@@ -215,7 +218,7 @@ const SdrAgent = () => {
         setForm(toForm(data));
         setDefaultPrompt(data.defaultPrompt || "");
       } catch (err) {
-        toastError(err);
+        friendlyError(err);
       }
       setLoading(false);
     })();
@@ -241,7 +244,7 @@ const SdrAgent = () => {
       toast.success("Configuracao do agente salva.");
       return true;
     } catch (err) {
-      toastError(err);
+      friendlyError(err);
       return false;
     } finally {
       setSaving(false);
@@ -274,6 +277,16 @@ const SdrAgent = () => {
       if (data.toolCalls && data.toolCalls.length) {
         extra.push({ role: "tools", calls: data.toolCalls });
       }
+      if (data.knowledge && data.knowledge.length) {
+        extra.push({
+          role: "tools",
+          calls: data.knowledge.map(k => ({
+            name: "knowledge",
+            file: k.fileName,
+            score: k.score
+          }))
+        });
+      }
       if (data.transfers && data.transfers.length) {
         extra.push({
           role: "tools",
@@ -289,7 +302,7 @@ const SdrAgent = () => {
         { role: "assistant", content: data.reply || "(sem resposta)" }
       ]);
     } catch (err) {
-      toastError(err);
+      friendlyError(err);
       setMessages(next);
     }
     setSending(false);

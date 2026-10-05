@@ -44,6 +44,8 @@ import AgendaAppointment from "../models/AgendaAppointment";
 import AgendaEvent from "../models/AgendaEvent";
 import AgendaGoogleToken from "../models/AgendaGoogleToken";
 import SdrAgentSetting from "../models/SdrAgentSetting";
+import SdrKnowledgeFile from "../models/SdrKnowledgeFile";
+import SdrKnowledgeChunk from "../models/SdrKnowledgeChunk";
 
 // eslint-disable-next-line
 const dbConfig = require("../config/database");
@@ -96,7 +98,9 @@ const models = [
   AgendaAppointment,
   AgendaEvent,
   AgendaGoogleToken,
-  SdrAgentSetting
+  SdrAgentSetting,
+  SdrKnowledgeFile,
+  SdrKnowledgeChunk
 ];
 
 sequelize.addModels(models);

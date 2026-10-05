@@ -63,6 +63,7 @@ const SimulateSdrAgentService = async ({
   return {
     reply: result.reply,
     toolCalls: result.toolCalls,
+    knowledge: result.knowledge,
     transfers,
     rounds: result.rounds,
     totalTokens: result.totalTokens,

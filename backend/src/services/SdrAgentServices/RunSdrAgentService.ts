@@ -8,6 +8,7 @@ import ShowTicketService from "../TicketServices/ShowTicketService";
 import SendWhatsAppMessage from "../WbotServices/SendWhatsAppMessage";
 import { AgentLoopResult, ChatFn, ChatMessage, runAgentLoop } from "./agentLoop";
 import { createOpenAIChat } from "./openAIChat";
+import { retrieveForConversation } from "../SdrKnowledgeServices/KnowledgeService";
 import { toChatHistory, splitReply } from "./conversation";
 import { decideSdrReply } from "./policy";
 import { renderPrompt } from "./promptTemplate";
@@ -31,9 +32,11 @@ export const converse = async ({
   contact,
   toolContext,
   chat
-}: ConverseInput): Promise<AgentLoopResult> => {
+}: ConverseInput): Promise<
+  AgentLoopResult & { knowledge: { fileName: string; score: number }[] }
+> => {
   const agenda = await getAgendaConfig();
-  const system = renderPrompt(effectivePrompt(settings), {
+  const basePrompt = renderPrompt(effectivePrompt(settings), {
     now: new Date(),
     timeZone: agenda.timezone,
     contactName: contact.name,
@@ -41,13 +44,21 @@ export const converse = async ({
     companyName: settings.companyName
   });
 
-  return runAgentLoop({
+  // Base de conhecimento: trechos relacionados as ultimas falas do lead.
+  const knowledge = await retrieveForConversation(
+    history.filter(m => m.role === "user").map(m => String(m.content || ""))
+  );
+  const system = knowledge.text ? `${basePrompt}\n\n${knowledge.text}` : basePrompt;
+
+  const result = await runAgentLoop({
     chat,
     messages: [{ role: "system", content: system }, ...history],
     tools: TOOL_DEFINITIONS,
     maxRounds: settings.maxToolRounds,
     runTool: (name, args) => executeTool(name, args, toolContext)
   });
+
+  return { ...result, knowledge: knowledge.sources };
 };
 
 const latestMessageId = async (ticketId: number): Promise<string | null> => {
