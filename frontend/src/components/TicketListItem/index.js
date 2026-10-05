@@ -206,6 +206,15 @@ const useStyles = makeStyles(theme => ({
 		fontWeight: 600,
 		border: `1px solid ${theme.palette.type === "dark" ? "rgba(255, 90, 95, 0.18)" : "rgba(229, 57, 53, 0.10)"}`,
 	},
+	aiChip: {
+		background: "#FF1919",
+		color: "#FFFFFF",
+		borderRadius: 999,
+		padding: "4px 8px",
+		fontSize: "0.7rem",
+		fontWeight: 700,
+		whiteSpace: "nowrap",
+	},
 	tagButton: {
 		padding: 6,
 		marginLeft: 6,
@@ -357,14 +366,17 @@ const TicketListItem = ({ ticket, selectable = false, selectedInBulk = false, on
 									<br />
 								)}
 							</Typography>
-							{ticket.tags && ticket.tags.length > 0 && (
+							{((ticket.tags && ticket.tags.length > 0) || (ticket.sdrAgentEnabled === true && !ticket.user)) && (
 								<span className={classes.tagList}>
-									{ticket.tags.slice(0, 2).map(tag => (
+									{ticket.sdrAgentEnabled === true && !ticket.user && (
+										<span className={classes.aiChip} title="Atendimento da IA">IA</span>
+									)}
+									{(ticket.tags || []).slice(0, 2).map(tag => (
 										<span key={tag.id} className={classes.tagChip}>
 											{tag.name}
 										</span>
 									))}
-									{ticket.tags.length > 2 && (
+									{(ticket.tags || []).length > 2 && (
 										<span className={classes.tagChip}>
 											+{ticket.tags.length - 2}
 										</span>
