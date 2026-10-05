@@ -2,6 +2,10 @@ import AppError from "../../errors/AppError";
 import AgendaAppointment from "../../models/AgendaAppointment";
 import { getAgendaConfig } from "./AgendaConfigService";
 import InternalAgendaProvider from "./InternalAgendaProvider";
+import GoogleBusySource from "./google/GoogleBusySource";
+import GoogleCalendarClient from "./google/GoogleCalendarClient";
+import GoogleEventSink from "./google/GoogleEventSink";
+import { isGoogleConfigured } from "./google/googleConfig";
 import {
   AgendaProvider,
   CancelAppointmentInput,
@@ -18,8 +22,20 @@ export const getAgendaProvider = async (): Promise<AgendaProvider> => {
 
   if (provider === "internal") return new InternalAgendaProvider();
 
-  // O provedor Google entra no proximo passo; ate la, configurar "google"
-  // falha de forma explicita em vez de cair silenciosamente na agenda interna.
+  if (provider === "google") {
+    // Sem credenciais, falha de forma explicita em vez de cair em silencio
+    // na agenda interna (o admin acharia que o Google esta valendo).
+    if (!isGoogleConfigured()) {
+      throw new AppError("ERR_AGENDA_GOOGLE_NOT_CONFIGURED", 503);
+    }
+    const client = new GoogleCalendarClient();
+    return new InternalAgendaProvider({
+      name: "google",
+      busySource: new GoogleBusySource(client),
+      eventSink: new GoogleEventSink(client)
+    });
+  }
+
   throw new AppError("ERR_AGENDA_PROVIDER_NOT_AVAILABLE", 501);
 };
 

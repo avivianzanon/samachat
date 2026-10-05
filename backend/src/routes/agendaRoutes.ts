@@ -6,6 +6,7 @@ import isAgendaEventsAuth from "../middleware/isAgendaEventsAuth";
 
 import * as AgendaController from "../controllers/AgendaController";
 import * as AgendaEventsController from "../controllers/AgendaEventsController";
+import * as AgendaGoogleController from "../controllers/AgendaGoogleController";
 
 const agendaRoutes = express.Router();
 
@@ -28,6 +29,12 @@ agendaRoutes.get("/agenda/appointments", ...view, AgendaController.indexAppointm
 agendaRoutes.post("/agenda/appointments", ...manage, AgendaController.storeAppointment);
 agendaRoutes.put("/agenda/appointments/:id/reschedule", ...manage, AgendaController.reschedule);
 agendaRoutes.put("/agenda/appointments/:id/cancel", ...manage, AgendaController.cancel);
+
+// Google Calendar (OAuth por closer)
+agendaRoutes.get("/agenda/google/status", ...view, AgendaGoogleController.showStatus);
+agendaRoutes.get("/agenda/google/auth-url", ...manage, AgendaGoogleController.authUrl);
+agendaRoutes.get("/agenda/google/callback", AgendaGoogleController.callback);
+agendaRoutes.delete("/agenda/google/closers/:id", ...manage, AgendaGoogleController.remove);
 
 // Eventos externos (no-show etc.): segredo proprio, sem login de usuario.
 agendaRoutes.post("/agenda/events", isAgendaEventsAuth, AgendaEventsController.store);
