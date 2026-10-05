@@ -29,6 +29,7 @@ import adminRoutes from "./adminRoutes";
 import openAIRoutes from "./openAIRoutes";
 import aiRoutes from "./aiRoutes";
 import agendaRoutes from "./agendaRoutes";
+import sdrAgentRoutes from "./sdrAgentRoutes";
 
 const routes = Router();
 
@@ -60,6 +61,7 @@ routes.use(adminRoutes);
 routes.use(openAIRoutes);
 routes.use(aiRoutes);
 routes.use(agendaRoutes);
+routes.use(sdrAgentRoutes);
 routes.use("/api/messages", apiRoutes);
 
 export default routes;

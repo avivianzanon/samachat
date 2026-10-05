@@ -40,7 +40,7 @@ class SdrAgentSetting extends Model<SdrAgentSetting> {
   @Column(DataType.TEXT)
   systemPrompt: string | null;
 
-  @Column
+  @Column(DataType.STRING)
   model: string | null;
 
   @Column(DataType.FLOAT)
