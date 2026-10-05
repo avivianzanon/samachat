@@ -30,6 +30,7 @@ import AssignmentTurnedInOutlinedIcon from "@material-ui/icons/AssignmentTurnedI
 import FolderOutlinedIcon from "@material-ui/icons/FolderOutlined";
 import EventNoteOutlinedIcon from "@material-ui/icons/EventNoteOutlined";
 import AccountTreeOutlinedIcon from "@material-ui/icons/AccountTreeOutlined";
+import HeadsetMicOutlinedIcon from "@material-ui/icons/HeadsetMicOutlined";
 import MemoryOutlinedIcon from "@material-ui/icons/MemoryOutlined";
 import SearchIcon from "@material-ui/icons/Search";
 import { makeStyles } from "@material-ui/core/styles";
@@ -268,6 +269,7 @@ const MainListItems = (props) => {
     "sectors.view",
     "connections.view",
     "settings.view",
+    "sdrAgent.view",
   ]);
 
   const menuConfig = {
@@ -354,6 +356,12 @@ const MainListItems = (props) => {
       to: "/openai",
       icon: <MemoryOutlinedIcon />,
       permissions: ["openai.settings.view", "openai.use", "openai.logs.view"],
+    },
+    sdrAgent: {
+      labelKey: "mainDrawer.listItems.sdrAgent",
+      to: "/sdr-agent",
+      icon: <HeadsetMicOutlinedIcon />,
+      permissions: ["sdrAgent.view"],
     },
     apiAdmin: {
       labelKey: "mainDrawer.listItems.apiAdmin",
@@ -615,6 +623,10 @@ const MainListItems = (props) => {
               )}
               {renderMenuItem(
                 "connections",
+                isDrawerOpen ? classes.nestedItem : classes.collapsedItem
+              )}
+              {renderMenuItem(
+                "sdrAgent",
                 isDrawerOpen ? classes.nestedItem : classes.collapsedItem
               )}
               {renderMenuItem(

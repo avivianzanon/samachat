@@ -523,6 +523,7 @@ const messages = {
           informatives: "Informatives",
             integrations: "Integrations",
             openai: "OpenAI / AI",
+            sdrAgent: "AI Training (SDR)",
           administration: "Administration",
           users: "Users",
           settings: "Settings",

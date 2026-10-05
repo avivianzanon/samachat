@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 import AppError from "../errors/AppError";
 import Ticket from "../models/Ticket";
 import SimulateSdrAgentService from "../services/SdrAgentServices/SimulateSdrAgentService";
+import DEFAULT_SDR_PROMPT from "../services/SdrAgentServices/defaultPrompt";
 import {
   effectivePrompt,
   getSdrAgentSettings,
@@ -23,7 +24,8 @@ export const showSettings = async (_req: Request, res: Response) => {
   return res.json({
     ...settings.toJSON(),
     // O que de fato vai para o modelo (a configuracao pode estar vazia = padrao).
-    effectivePrompt: effectivePrompt(settings)
+    effectivePrompt: effectivePrompt(settings),
+    defaultPrompt: DEFAULT_SDR_PROMPT
   });
 };
 

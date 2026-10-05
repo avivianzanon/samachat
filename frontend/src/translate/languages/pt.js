@@ -430,6 +430,7 @@ const messages = {
           kanban: "Kanban",
           informatives: "Informativos",
           openai: "IA",
+          sdrAgent: "Treinamento da IA",
           integrations: "Integracoes",
           administration: "Administração",
           users: "Usuários",
