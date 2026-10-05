@@ -42,7 +42,7 @@ const useStyles = makeStyles(theme => ({
 		marginBottom: theme.spacing(2),
 	},
 	pageSubtitle: {
-		color: "#111111",
+		color: theme.palette.text.secondary,
 		fontSize: "0.9375rem",
 		fontWeight: 300,
 		lineHeight: 1.6,
@@ -63,11 +63,18 @@ const useStyles = makeStyles(theme => ({
 		border: "1px solid rgba(15, 23, 42, 0.08)",
 		boxShadow: "0 12px 20px rgba(15, 23, 42, 0.08)",
 		backgroundColor: "#ffffff",
+		color: "#111111",
 	},
 	tabsRoot: {
 		minHeight: 0,
 	},
 	tabRoot: {
+		color: "#475569",
+		opacity: 1,
+		"&.Mui-selected": {
+			color: "#0f172a",
+			fontWeight: 700,
+		},
 		minHeight: 42,
 		borderRadius: 10,
 		paddingLeft: theme.spacing(2),
@@ -80,13 +87,17 @@ const useStyles = makeStyles(theme => ({
 		boxShadow: "0 12px 20px rgba(15, 23, 42, 0.08)",
 		backgroundColor: "#ffffff",
 		backgroundImage: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
+		color: "#111111",
+		"& .MuiTypography-root": {
+			color: "inherit",
+		},
 		marginBottom: theme.spacing(2),
 		width: "100%",
 		boxSizing: "border-box",
 	},
 	tabPanelTitle: {
 		fontWeight: 700,
-		color: theme.palette.text.primary,
+		color: "#111111",
 	},
 	tabPanelText: {
 		marginTop: theme.spacing(0.75),
@@ -106,6 +117,10 @@ const useStyles = makeStyles(theme => ({
 		boxShadow: "0 12px 20px rgba(15, 23, 42, 0.08)",
 		backgroundColor: "#ffffff",
 		backgroundImage: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
+		color: "#111111",
+		"& .MuiTypography-root": {
+			color: "inherit",
+		},
 	},
 	settingMeta: {
 		display: "flex",
