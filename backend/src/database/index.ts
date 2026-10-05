@@ -37,6 +37,10 @@ import Schedule from "../models/Schedule";
 import ScheduleLog from "../models/ScheduleLog";
 import OpenAISetting from "../models/OpenAISetting";
 import OpenAILog from "../models/OpenAILog";
+import AgendaSetting from "../models/AgendaSetting";
+import AgendaCloser from "../models/AgendaCloser";
+import AgendaAvailability from "../models/AgendaAvailability";
+import AgendaAppointment from "../models/AgendaAppointment";
 
 // eslint-disable-next-line
 const dbConfig = require("../config/database");
@@ -82,7 +86,11 @@ const models = [
   Schedule,
   ScheduleLog,
   OpenAISetting,
-  OpenAILog
+  OpenAILog,
+  AgendaSetting,
+  AgendaCloser,
+  AgendaAvailability,
+  AgendaAppointment
 ];
 
 sequelize.addModels(models);
