@@ -1,10 +1,12 @@
 import AppError from "../../errors/AppError";
 import KanbanColumn from "../../models/KanbanColumn";
+import { AUTO_RULES } from "./KanbanAutoMoveService";
 
 interface Request {
   name: string;
   key?: string;
   isActive?: boolean;
+  autoRule?: string | null;
 }
 
 const sanitizeKey = (value: string): string => {
@@ -18,7 +20,8 @@ const sanitizeKey = (value: string): string => {
 const CreateKanbanColumnService = async ({
   name,
   key,
-  isActive = true
+  isActive = true,
+  autoRule
 }: Request): Promise<KanbanColumn> => {
   const trimmedName = name.trim();
 
@@ -26,18 +29,17 @@ const CreateKanbanColumnService = async ({
     throw new AppError("ERR_KANBAN_COLUMN_NAME_REQUIRED");
   }
 
-  const nextKey = sanitizeKey(key ? key : trimmedName);
-
-  if (!nextKey) {
-    throw new AppError("ERR_KANBAN_COLUMN_KEY_REQUIRED");
+  if (autoRule && !AUTO_RULES.includes(autoRule)) {
+    throw new AppError("ERR_KANBAN_INVALID_AUTO_RULE");
   }
 
-  const existing = await KanbanColumn.findOne({
-    where: { key: nextKey }
-  });
-
-  if (existing) {
-    throw new AppError("ERR_KANBAN_COLUMN_DUPLICATED");
+  // A chave e interna (o usuario nao precisa digitar): vem do nome e, se ja
+  // existir, ganha um numero no final ("reuniao", "reuniao_2"...).
+  const baseKey = sanitizeKey(key ? key : trimmedName) || "coluna";
+  let nextKey = baseKey;
+  for (let n = 2; await KanbanColumn.findOne({ where: { key: nextKey } }); n += 1) {
+    if (key) throw new AppError("ERR_KANBAN_COLUMN_DUPLICATED");
+    nextKey = `${baseKey}_${n}`;
   }
 
   const maxPosition = await KanbanColumn.max("position");
@@ -49,6 +51,7 @@ const CreateKanbanColumnService = async ({
     name: trimmedName,
     key: nextKey,
     isActive,
+    autoRule: autoRule || null,
     position
   });
 

@@ -22,9 +22,22 @@ const ensureDefaultColumns = async (): Promise<void> => {
   }
 
   await KanbanColumn.bulkCreate([
-    { name: "Pendentes", key: "pending", position: 0, isActive: true },
-    { name: "Em atendimento", key: "open", position: 1, isActive: true },
-    { name: "Finalizados", key: "closed", position: 2, isActive: true }
+    {
+      name: "Atendimento iniciado com IA",
+      key: "ai",
+      position: 0,
+      isActive: true,
+      autoRule: "ai"
+    },
+    {
+      name: "Atendimento humano",
+      key: "human",
+      position: 1,
+      isActive: true,
+      autoRule: "human"
+    },
+    { name: "Pendentes", key: "pending", position: 2, isActive: true },
+    { name: "Finalizados", key: "closed", position: 3, isActive: true }
   ]);
 };
 
@@ -152,10 +165,29 @@ const ListKanbanService = async ({
     ])
   );
   const fallbackColumnByKey = new Map(columns.map(column => [column.key, column.id]));
+  const aiColumnId = columns.find(column => column.autoRule === "ai")?.id;
+  const humanColumnId = columns.find(column => column.autoRule === "human")?.id;
+
+  // Onde o atendimento aparece quando ninguem o posicionou a mao nem o
+  // automatico ja o moveu: IA atendendo -> coluna da IA; com atendente ->
+  // coluna do humano; senao pela situacao (pendente/aberto/finalizado).
+  const derivedColumnId = (ticket: Ticket): number | undefined => {
+    if (ticket.status !== "closed") {
+      if (aiColumnId && ticket.sdrAgentEnabled === true && !ticket.userId) {
+        return aiColumnId;
+      }
+      if (humanColumnId && ticket.userId) {
+        return humanColumnId;
+      }
+    }
+    return fallbackColumnByKey.get(ticket.status);
+  };
 
   tickets.forEach(ticket => {
     const card = cardMap.get(ticket.id);
-    const columnId = card?.columnId || fallbackColumnByKey.get(ticket.status) || columns[0]?.id;
+    const cardColumnId =
+      card && columnMap.has(card.columnId) ? card.columnId : undefined;
+    const columnId = cardColumnId || derivedColumnId(ticket) || columns[0]?.id;
 
     if (!columnId || !columnMap.has(columnId)) {
       return;
@@ -191,6 +223,7 @@ const ListKanbanService = async ({
       id: column.id,
       name: column.name,
       key: column.key,
+      autoRule: column.autoRule,
       position: column.position,
       count: cardsData.length,
       cards: cardsData

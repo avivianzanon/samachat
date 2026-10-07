@@ -9,7 +9,8 @@ import {
   AllowNull,
   Default,
   Unique,
-  HasMany
+  HasMany,
+  DataType
 } from "sequelize-typescript";
 
 import KanbanCard from "./KanbanCard";
@@ -39,6 +40,11 @@ class KanbanColumn extends Model<KanbanColumn> {
   @Default(true)
   @Column
   isActive: boolean;
+
+  // "ai" | "human" | null. Ver KanbanAutoMoveService.
+  @AllowNull(true)
+  @Column(DataType.STRING)
+  autoRule: string | null;
 
   @HasMany(() => KanbanCard)
   cards: KanbanCard[];

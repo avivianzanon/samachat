@@ -10,8 +10,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControlLabel,
-  Switch,
+  MenuItem,
   TextField
 } from "@material-ui/core";
 
@@ -21,15 +20,21 @@ import api from "../../services/api";
 import toastError from "../../errors/toastError";
 
 const ColumnSchema = Yup.object().shape({
-  name: Yup.string().min(2, "Too Short!").max(60, "Too Long!").required("Required"),
-  key: Yup.string().max(40, "Too Long!")
+  name: Yup.string().min(2, "Too Short!").max(60, "Too Long!").required("Required")
 });
+
+// Quando o cliente entra sozinho nesta coluna.
+const AUTO_OPTIONS = [
+  { value: "", label: "Nunca (só movo manualmente)" },
+  { value: "ai", label: "Quando a IA atender o cliente" },
+  { value: "human", label: "Quando um humano assumir o cliente" }
+];
 
 const KanbanColumnModal = ({ open, onClose, column }) => {
   const initialState = {
     name: "",
-    key: "",
-    isActive: true
+    isActive: true,
+    autoRule: ""
   };
 
   const [formData, setFormData] = useState(initialState);
@@ -42,21 +47,20 @@ const KanbanColumnModal = ({ open, onClose, column }) => {
 
     setFormData({
       name: column.name || "",
-      key: column.key || "",
-      isActive: column.isActive !== false
+      isActive: column.isActive !== false,
+      autoRule: column.autoRule || ""
     });
   }, [column, open]);
 
-  const handleClose = () => {
-    onClose();
+  const handleClose = result => {
+    onClose(result);
     setFormData(initialState);
   };
 
   const handleSave = async values => {
     const payload = {
       name: values.name,
-      key: values.key || undefined,
-      isActive: values.isActive
+      autoRule: values.autoRule || null
     };
 
     try {
@@ -66,14 +70,14 @@ const KanbanColumnModal = ({ open, onClose, column }) => {
         await api.post("/kanban/columns", payload);
       }
       toast.success(i18n.t("kanban.columnModal.success"));
-      handleClose();
+      handleClose({ saved: true, created: !column?.id });
     } catch (err) {
       toastError(err);
     }
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={() => handleClose()} maxWidth="sm" fullWidth>
       <DialogTitle>
         {column?.id
           ? `${i18n.t("kanban.columnModal.title.edit")}`
@@ -84,10 +88,7 @@ const KanbanColumnModal = ({ open, onClose, column }) => {
         enableReinitialize
         validationSchema={ColumnSchema}
         onSubmit={(values, actions) => {
-          setTimeout(() => {
-            handleSave(values);
-            actions.setSubmitting(false);
-          }, 300);
+          handleSave(values).finally(() => actions.setSubmitting(false));
         }}
       >
         {({ values, touched, errors, setFieldValue, isSubmitting }) => (
@@ -108,40 +109,25 @@ const KanbanColumnModal = ({ open, onClose, column }) => {
                 variant="outlined"
                 margin="dense"
               />
-              <Field
-                as={TextField}
-                label={i18n.t("kanban.columnModal.form.key")}
-                name="key"
+              <TextField
+                select
                 fullWidth
-                error={touched.key && Boolean(errors.key)}
-                helperText={
-                  touched.key && errors.key
-                    ? errors.key
-                    : i18n.t("kanban.columnModal.form.keyHelper")
-                }
                 variant="outlined"
                 margin="dense"
-              />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={values.isActive}
-                    onChange={event =>
-                      setFieldValue("isActive", event.target.checked)
-                    }
-                    color="primary"
-                  />
-                }
-                label={
-                  values.isActive
-                    ? i18n.t("kanban.columnModal.form.active")
-                    : i18n.t("kanban.columnModal.form.inactive")
-                }
-                style={{ marginTop: 8 }}
-              />
+                label="Mover clientes para cá automaticamente"
+                value={values.autoRule}
+                onChange={event => setFieldValue("autoRule", event.target.value)}
+                helperText="Se escolher uma opção, o cliente entra nesta coluna sozinho. Você ainda pode arrastar para outra coluna quando quiser."
+              >
+                {AUTO_OPTIONS.map(option => (
+                  <MenuItem key={option.value || "none"} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </TextField>
             </DialogContent>
             <DialogActions>
-              <Button onClick={handleClose} color="secondary" variant="outlined">
+              <Button onClick={() => handleClose()} color="secondary" variant="outlined">
                 {i18n.t("kanban.columnModal.buttons.cancel")}
               </Button>
               <Button
