@@ -15,7 +15,6 @@ import CircularProgress from "@material-ui/core/CircularProgress";
 
 import { i18n } from "../../translate/i18n";
 import api from "../../services/api";
-import ButtonWithSpinner from "../ButtonWithSpinner";
 import ContactModal from "../ContactModal";
 import toastError from "../../errors/toastError";
 import { AuthContext } from "../../context/Auth/AuthContext";
@@ -71,7 +70,7 @@ const NewTicketModal = ({ modalOpen, onClose }) => {
 
 				fetchContacts();
 			},
-			searchParam && page === 1 ? 400 : 0
+			searchParam && page === 1 ? 200 : 0
 		);
 		return () => {
 			cancelled = true;
@@ -111,11 +110,21 @@ const NewTicketModal = ({ modalOpen, onClose }) => {
 
 	const handleSelectOption = (e, newValue) => {
 		if (newValue?.number) {
+			// Clicou no contato: abre a conversa na hora (a pessoa envia a 1a mensagem la).
 			setSelectedContact(newValue);
+			handleSaveTicket(newValue.id);
 		} else if (newValue?.name) {
-			setNewContact({ name: newValue.name });
-			setContactModalOpen(true);
+			openNewContact(newValue.name);
 		}
+	};
+
+	// "Adicionar novo contato": se o que foi digitado parece numero, ja preenche o telefone.
+	const openNewContact = typed => {
+		const text = String(typed || "").trim();
+		const digits = text.replace(/\D/g, "");
+		const looksLikeNumber = digits.length >= 8 && /^[\d\s()+-]+$/.test(text);
+		setNewContact(looksLikeNumber ? { number: digits } : text ? { name: text } : {});
+		setContactModalOpen(true);
 	};
 
 	const handleCloseContactModal = () => {
@@ -129,7 +138,7 @@ const NewTicketModal = ({ modalOpen, onClose }) => {
 	const createAddContactOption = (filterOptions, params) => {
 		const filtered = filter(filterOptions, params);
 
-		if (params.inputValue !== "" && !loading && searchParam.length >= 3) {
+		if (params.inputValue !== "" && !loading) {
 			filtered.push({
 				name: `${params.inputValue}`,
 			});
@@ -189,12 +198,6 @@ const NewTicketModal = ({ modalOpen, onClose }) => {
 								variant="outlined"
 								autoFocus
 								onChange={e => setSearchParam(e.target.value)}
-								onKeyPress={e => {
-									if (loading || !selectedContact) return;
-									else if (e.key === "Enter") {
-										handleSaveTicket(selectedContact.id);
-									}
-								}}
 								InputProps={{
 									...params.InputProps,
 									endAdornment: (
@@ -212,6 +215,15 @@ const NewTicketModal = ({ modalOpen, onClose }) => {
 				</DialogContent>
 				<DialogActions>
 					<Button
+						onClick={() => openNewContact(searchParam)}
+						color="primary"
+						variant="contained"
+						disabled={loading}
+						style={{ marginRight: "auto" }}
+					>
+						+ Adicionar novo contato
+					</Button>
+					<Button
 						onClick={handleClose}
 						color="secondary"
 						disabled={loading}
@@ -219,16 +231,6 @@ const NewTicketModal = ({ modalOpen, onClose }) => {
 					>
 						{i18n.t("newTicketModal.buttons.cancel")}
 					</Button>
-					<ButtonWithSpinner
-						variant="contained"
-						type="button"
-						disabled={!selectedContact}
-						onClick={() => handleSaveTicket(selectedContact.id)}
-						color="primary"
-						loading={loading}
-					>
-						{i18n.t("newTicketModal.buttons.ok")}
-					</ButtonWithSpinner>
 				</DialogActions>
 			</Dialog>
 		</>

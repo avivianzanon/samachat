@@ -106,7 +106,8 @@ const TicketTagsModal = ({ open, onClose, ticketId, initialTagIds = [] }) => {
             ))}
           </div>
           <Button
-            variant="outlined"
+            variant="contained"
+            color="primary"
             onClick={handleCreate}
             disabled={creating || !newName.trim()}
           >

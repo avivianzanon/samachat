@@ -22,6 +22,7 @@ const useStyles = makeStyles(theme => ({
 const QueueSelect = ({ selectedQueueIds, onChange }) => {
 	const classes = useStyles();
 	const [queues, setQueues] = useState([]);
+	const [loaded, setLoaded] = useState(false);
 
 	useEffect(() => {
 		(async () => {
@@ -31,6 +32,7 @@ const QueueSelect = ({ selectedQueueIds, onChange }) => {
 			} catch (err) {
 				toastError(err);
 			}
+			setLoaded(true);
 		})();
 	}, []);
 
@@ -57,6 +59,7 @@ const QueueSelect = ({ selectedQueueIds, onChange }) => {
 							horizontal: "left",
 						},
 						getContentAnchorEl: null,
+						PaperProps: { style: { marginTop: 6, borderRadius: 10, minWidth: 180 } },
 					}}
 					renderValue={selected => (
 						<div className={classes.chips}>
@@ -76,6 +79,14 @@ const QueueSelect = ({ selectedQueueIds, onChange }) => {
 						</div>
 					)}
 				>
+					{loaded && queues.length === 0 && (
+						<MenuItem
+							disabled
+							style={{ whiteSpace: "normal", maxWidth: 260, opacity: 0.8, fontSize: "0.875rem" }}
+						>
+							Nenhum setor cadastrado ainda. Crie setores no menu Setores.
+						</MenuItem>
+					)}
 					{queues.map(queue => (
 						<MenuItem key={queue.id} value={queue.id}>
 							{queue.name}

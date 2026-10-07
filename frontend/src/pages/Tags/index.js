@@ -21,6 +21,7 @@ import {
 import MainContainer from "../../components/MainContainer";
 import MainHeader from "../../components/MainHeader";
 import MainHeaderButtonsWrapper from "../../components/MainHeaderButtonsWrapper";
+import BulkActionsMenu from "../../components/BulkActionsMenu";
 import TableRowSkeleton from "../../components/TableRowSkeleton";
 import Title from "../../components/Title";
 import { i18n } from "../../translate/i18n";
@@ -244,27 +245,13 @@ const Tags = () => {
           </Typography>
         </div>
         <MainHeaderButtonsWrapper>
-          {selectedTagIds.length > 0 && (
-            <Typography className={classes.bulkSelectionInfo}>
-              {selectedTagIds.length} selecionado(s)
-            </Typography>
-          )}
-          <Button
-            variant="contained"
-            className={classes.bulkActionButton}
-            disabled={selectedTagIds.length !== 1}
-            onClick={handleEditSelectedTag}
-          >
-            Editar selecionado
-          </Button>
-          <Button
-            variant="outlined"
-            className={classes.bulkDeleteButton}
-            disabled={selectedTagIds.length === 0}
-            onClick={handleOpenBulkDeleteConfirmation}
-          >
-            Excluir selecionados
-          </Button>
+          <BulkActionsMenu
+            count={selectedTagIds.length}
+            onClear={() => setSelectedTagIds([])}
+            actions={[
+              { label: "Excluir selecionadas", onClick: handleOpenBulkDeleteConfirmation }
+            ]}
+          />
           <TextField
             className={classes.searchField}
             placeholder={i18n.t("tags.searchPlaceholder")}

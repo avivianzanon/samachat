@@ -146,10 +146,8 @@ const TagModal = ({ open, onClose, tagId }) => {
                   label={i18n.t("tagModal.form.color")}
                   name="color"
                   id="color"
-                  onFocus={() => {
-                    setColorPickerModalOpen(true);
-                    nameRef.current.blur();
-                  }}
+                  onClick={() => setColorPickerModalOpen(true)}
+                  inputProps={{ readOnly: true, style: { cursor: "pointer" } }}
                   error={touched.color && Boolean(errors.color)}
                   helperText={
                     touched.color && errors.color

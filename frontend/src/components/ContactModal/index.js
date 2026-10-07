@@ -23,48 +23,49 @@ import api from "../../services/api";
 import toastError from "../../errors/toastError";
 import TagSelect from "../TagSelect";
 
+// Cores vem do tema (claro/escuro): nada fixo aqui.
 const useStyles = makeStyles(theme => ({
-	root: {
-		display: "flex",
-		flexWrap: "wrap",
-	},
-	dialogPaper: {
-		borderRadius: 12,
-		padding: theme.spacing(1),
-	},
 	dialogTitle: {
 		fontWeight: 700,
 		fontSize: "1.05rem",
-		color: "#0f172a",
 	},
 	dialogContent: {
-		backgroundColor: "#f8fafc",
+		display: "flex",
+		flexDirection: "column",
+		gap: theme.spacing(0.5),
+	},
+	row: {
+		display: "flex",
+		gap: theme.spacing(1.5),
+		flexWrap: "wrap",
+		"& > *": {
+			flex: "1 1 220px",
+		},
+	},
+	extraAttr: {
+		display: "flex",
+		alignItems: "flex-start",
+		gap: theme.spacing(1),
+	},
+	sectionTitle: {
+		fontWeight: 700,
+		marginTop: theme.spacing(1.5),
+	},
+	sectionHint: {
+		color: theme.palette.text.secondary,
+		fontSize: "0.8125rem",
+		marginBottom: theme.spacing(0.5),
 	},
 	dialogActions: {
 		padding: theme.spacing(2),
 	},
-	textField: {
-		marginRight: theme.spacing(1),
-		flex: 1,
-	},
-
-	extraAttr: {
-		display: "flex",
-		justifyContent: "center",
-		alignItems: "center",
-	},
-	sectionTitle: {
-		fontWeight: 700,
-		color: "#0f172a",
-	},
-
 	btnWrapper: {
 		position: "relative",
 	},
 	primaryButton: {
 		borderRadius: 4,
 		textTransform: "none",
-		fontWeight: 500,
+		fontWeight: 600,
 		boxShadow: "none",
 		backgroundColor: "#FF1919",
 		color: "#FFFFFF",
@@ -77,15 +78,7 @@ const useStyles = makeStyles(theme => ({
 		borderRadius: 4,
 		textTransform: "none",
 		fontWeight: 500,
-		backgroundColor: "#F3F4F6",
-		borderColor: "rgba(15, 23, 42, 0.12)",
-		color: "#111827",
-		"&:hover": {
-			backgroundColor: "#E5E7EB",
-			borderColor: "rgba(15, 23, 42, 0.16)",
-		},
 	},
-
 	buttonProgress: {
 		color: green[500],
 		position: "absolute",
@@ -174,36 +167,33 @@ const ContactModal = ({ open, onClose, contactId, initialValues, onSave }) => {
 	};
 
 	return (
-		<div className={classes.root}>
-			<Dialog
-				open={open}
-				onClose={handleClose}
-				maxWidth="lg"
-				scroll="paper"
-				classes={{ paper: classes.dialogPaper }}
+		<Dialog
+			open={open}
+			onClose={handleClose}
+			maxWidth="sm"
+			fullWidth
+			scroll="paper"
+		>
+			<DialogTitle id="form-dialog-title" className={classes.dialogTitle}>
+				{contactId
+					? `${i18n.t("contactModal.title.edit")}`
+					: `${i18n.t("contactModal.title.add")}`}
+			</DialogTitle>
+			<Formik
+				initialValues={contact}
+				enableReinitialize={true}
+				validationSchema={ContactSchema}
+				onSubmit={(values, actions) => {
+					handleSaveContact(values).finally(() => actions.setSubmitting(false));
+				}}
 			>
-				<DialogTitle id="form-dialog-title" className={classes.dialogTitle}>
-					{contactId
-						? `${i18n.t("contactModal.title.edit")}`
-						: `${i18n.t("contactModal.title.add")}`}
-				</DialogTitle>
-				<Formik
-					initialValues={contact}
-					enableReinitialize={true}
-					validationSchema={ContactSchema}
-					onSubmit={(values, actions) => {
-						setTimeout(() => {
-							handleSaveContact(values);
-							actions.setSubmitting(false);
-						}, 400);
-					}}
-				>
-					{({ values, errors, touched, isSubmitting, setFieldValue }) => (
-						<Form>
-							<DialogContent dividers className={classes.dialogContent}>
-								<Typography variant="subtitle1" gutterBottom className={classes.sectionTitle}>
-									{i18n.t("contactModal.form.mainInfo")}
-								</Typography>
+				{({ values, errors, touched, isSubmitting, setFieldValue }) => (
+					<Form>
+						<DialogContent dividers className={classes.dialogContent}>
+							<Typography variant="subtitle1" className={classes.sectionTitle} style={{ marginTop: 0 }}>
+								{i18n.t("contactModal.form.mainInfo")}
+							</Typography>
+							<div className={classes.row}>
 								<Field
 									as={TextField}
 									label={i18n.t("contactModal.form.name")}
@@ -217,7 +207,6 @@ const ContactModal = ({ open, onClose, contactId, initialValues, onSave }) => {
 									}
 									variant="outlined"
 									margin="dense"
-									className={classes.textField}
 								/>
 								<Field
 									as={TextField}
@@ -233,126 +222,109 @@ const ContactModal = ({ open, onClose, contactId, initialValues, onSave }) => {
 									variant="outlined"
 									margin="dense"
 								/>
-								<div>
-									<Field
-										as={TextField}
-										label={i18n.t("contactModal.form.email")}
-										name="email"
-										error={touched.email && Boolean(errors.email)}
-										helperText={
-											touched.email && errors.email
-												? errors.email
-												: i18n.t("contactModal.form.emailHelper")
-										}
-										placeholder="Email address"
-										fullWidth
-										margin="dense"
-										variant="outlined"
-									/>
-								</div>
-								<Typography
-									style={{ marginBottom: 8, marginTop: 12 }}
-									variant="subtitle1"
-									className={classes.sectionTitle}
-								>
-									{i18n.t("contactModal.form.tags")}
-								</Typography>
-								<TagSelect
-									selectedTagIds={values.tagIds || []}
-									onChange={(ids) => setFieldValue("tagIds", ids)}
-									label={i18n.t("contactModal.form.tagsPlaceholder")}
-								/>
-								<Typography
-									style={{ marginBottom: 8, marginTop: 12 }}
-									variant="subtitle1"
-									className={classes.sectionTitle}
-								>
-									{i18n.t("contactModal.form.extraInfo")}
-								</Typography>
+							</div>
+							<Field
+								as={TextField}
+								label={i18n.t("contactModal.form.email")}
+								name="email"
+								error={touched.email && Boolean(errors.email)}
+								helperText={
+									touched.email && errors.email
+										? errors.email
+										: i18n.t("contactModal.form.emailHelper")
+								}
+								fullWidth
+								margin="dense"
+								variant="outlined"
+							/>
 
-								<FieldArray name="extraInfo">
-									{({ push, remove }) => (
-										<>
-											{values.extraInfo &&
-												values.extraInfo.length > 0 &&
-												values.extraInfo.map((info, index) => (
-													<div
-														className={classes.extraAttr}
-														key={`${index}-info`}
+							<Typography variant="subtitle1" className={classes.sectionTitle}>
+								{i18n.t("contactModal.form.tags")}
+							</Typography>
+							<TagSelect
+								selectedTagIds={values.tagIds || []}
+								onChange={ids => setFieldValue("tagIds", ids)}
+								label={i18n.t("contactModal.form.tagsPlaceholder")}
+							/>
+
+							<Typography variant="subtitle1" className={classes.sectionTitle}>
+								{i18n.t("contactModal.form.extraInfo")}
+							</Typography>
+							<FieldArray name="extraInfo">
+								{({ push, remove }) => (
+									<>
+										{values.extraInfo &&
+											values.extraInfo.length > 0 &&
+											values.extraInfo.map((info, index) => (
+												<div className={classes.extraAttr} key={`${index}-info`}>
+													<Field
+														as={TextField}
+														label={i18n.t("contactModal.form.extraName")}
+														name={`extraInfo[${index}].name`}
+														variant="outlined"
+														margin="dense"
+														style={{ flex: 1 }}
+													/>
+													<Field
+														as={TextField}
+														label={i18n.t("contactModal.form.extraValue")}
+														name={`extraInfo[${index}].value`}
+														variant="outlined"
+														margin="dense"
+														style={{ flex: 1 }}
+													/>
+													<IconButton
+														size="small"
+														style={{ marginTop: 14 }}
+														onClick={() => remove(index)}
 													>
-														<Field
-															as={TextField}
-															label={i18n.t("contactModal.form.extraName")}
-															name={`extraInfo[${index}].name`}
-															helperText={i18n.t("contactModal.form.extraNameHelper")}
-															variant="outlined"
-															margin="dense"
-															className={classes.textField}
-														/>
-														<Field
-															as={TextField}
-															label={i18n.t("contactModal.form.extraValue")}
-															name={`extraInfo[${index}].value`}
-															helperText={i18n.t("contactModal.form.extraValueHelper")}
-															variant="outlined"
-															margin="dense"
-															className={classes.textField}
-														/>
-														<IconButton
-															size="small"
-															onClick={() => remove(index)}
-														>
-															<DeleteOutlineIcon />
-														</IconButton>
-													</div>
-												))}
-											<div className={classes.extraAttr}>
-												<Button
-													style={{ flex: 1, marginTop: 8 }}
-													variant="outlined"
-													color="primary"
-													onClick={() => push({ name: "", value: "" })}
-												>
-													{`+ ${i18n.t("contactModal.buttons.addExtraInfo")}`}
-												</Button>
-											</div>
-										</>
-									)}
-								</FieldArray>
-							</DialogContent>
-							<DialogActions className={classes.dialogActions}>
-								<Button
-									onClick={handleClose}
-									color="secondary"
-									disabled={isSubmitting}
-									variant="outlined"
-									className={classes.secondaryButton}
-								>
-									{i18n.t("contactModal.buttons.cancel")}
-								</Button>
-								<Button
-									type="submit"
-									color="primary"
-									disabled={isSubmitting}
-									variant="contained"
-									className={`${classes.btnWrapper} ${classes.primaryButton}`}
-								>
-									{contactId
-										? `${i18n.t("contactModal.buttons.okEdit")}`
-										: `${i18n.t("contactModal.buttons.okAdd")}`}
-									{isSubmitting && (
-										<CircularProgress
-											size={24}
-											className={classes.buttonProgress}
-										/>
-									)}
-								</Button>
-							</DialogActions>
-						</Form>
-					)}
-				</Formik>
-			</Dialog>
-		</div>
+														<DeleteOutlineIcon />
+													</IconButton>
+												</div>
+											))}
+										<div>
+											<Button
+												variant="outlined"
+												color="primary"
+												className={classes.secondaryButton}
+												onClick={() => push({ name: "", value: "" })}
+											>
+												{`+ ${i18n.t("contactModal.buttons.addExtraInfo")}`}
+											</Button>
+										</div>
+									</>
+								)}
+							</FieldArray>
+						</DialogContent>
+						<DialogActions className={classes.dialogActions}>
+							<Button
+								onClick={handleClose}
+								color="secondary"
+								disabled={isSubmitting}
+								variant="outlined"
+								className={classes.secondaryButton}
+							>
+								{i18n.t("contactModal.buttons.cancel")}
+							</Button>
+							<Button
+								type="submit"
+								color="primary"
+								disabled={isSubmitting}
+								variant="contained"
+								className={`${classes.btnWrapper} ${classes.primaryButton}`}
+							>
+								{contactId
+									? `${i18n.t("contactModal.buttons.okEdit")}`
+									: `${i18n.t("contactModal.buttons.okAdd")}`}
+								{isSubmitting && (
+									<CircularProgress size={24} className={classes.buttonProgress} />
+								)}
+							</Button>
+						</DialogActions>
+					</Form>
+				)}
+			</Formik>
+		</Dialog>
 	);
 };
 
