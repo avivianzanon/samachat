@@ -12,7 +12,8 @@ const round = (v: number[]): number[] => v.map(x => Math.round(x * 1e6) / 1e6);
 // Embeddings pela OpenAI, com a mesma chave/ativacao da tela de OpenAI do chat.
 export const createEmbeddings: EmbedFn = async texts => {
   const settings = await GetOpenAISettingsService();
-  if (!settings.isActive) throw new AppError("ERR_OPENAI_INACTIVE", 400);
+  // A busca da base de conhecimento usa a chave da OpenAI mesmo quando outra IA
+  // (Gemini ou Claude) e a que conversa: so exige a chave, nao a ativacao.
   if (!settings.apiKey) throw new AppError("ERR_OPENAI_NO_API_KEY", 400);
 
   const client = buildClient(settings.apiKey);

@@ -1,8 +1,10 @@
 import AppError from "../../errors/AppError";
 import ShowTicketService from "../TicketServices/ShowTicketService";
 import UpdateTicketService from "../TicketServices/UpdateTicketService";
+import KanbanAutoMoveService from "../KanbanServices/KanbanAutoMoveService";
+import { isEngineReady } from "../AiEngineServices/engines";
 import { decideSdrReply } from "./policy";
-import { getSdrAgentSettings } from "./SdrAgentSettingsService";
+import { effectivePrompt, getSdrAgentSettings } from "./SdrAgentSettingsService";
 
 export type HandoffMode = "ai" | "human";
 
@@ -51,11 +53,18 @@ export const setHandoff = async (
   const ticket = await ShowTicketService(ticketId);
 
   if (mode === "ai") {
+    // Confere o modulo Treinamento da IA na hora: agente ligado e com prompt.
+    const settings = await getSdrAgentSettings();
+    if (!settings.isEnabled) throw new AppError("ERR_SDR_AGENT_DISABLED", 400);
+    if (!effectivePrompt(settings)) throw new AppError("ERR_SDR_NO_PROMPT", 400);
+    if (!(await isEngineReady())) throw new AppError("ERR_AI_NO_ENGINE", 400);
+
     await ticket.update({ sdrAgentEnabled: true });
     await UpdateTicketService({
       ticketData: { status: "pending", userId: null as any },
       ticketId
     });
+    await KanbanAutoMoveService(ticketId, "ai");
   } else if (mode === "human") {
     // Assumir: a IA para e a conversa passa para quem clicou, ja liberada para
     // responder (nao existe mais o passo de "aceitar").
@@ -64,6 +73,7 @@ export const setHandoff = async (
       ticketData: { status: "open", userId },
       ticketId
     });
+    await KanbanAutoMoveService(ticketId, "human");
   } else {
     throw new AppError("ERR_SDR_INVALID_HANDOFF_MODE", 400);
   }

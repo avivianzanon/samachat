@@ -36,6 +36,7 @@ import FlowExecutionLog from "../models/FlowExecutionLog";
 import Schedule from "../models/Schedule";
 import ScheduleLog from "../models/ScheduleLog";
 import OpenAISetting from "../models/OpenAISetting";
+import IntegrationSetting from "../models/IntegrationSetting";
 import OpenAILog from "../models/OpenAILog";
 import AgendaSetting from "../models/AgendaSetting";
 import AgendaCloser from "../models/AgendaCloser";
@@ -91,6 +92,7 @@ const models = [
   Schedule,
   ScheduleLog,
   OpenAISetting,
+  IntegrationSetting,
   OpenAILog,
   AgendaSetting,
   AgendaCloser,

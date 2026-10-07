@@ -1,7 +1,7 @@
 import AppError from "../../errors/AppError";
 import CreateOrUpdateContactService from "../ContactServices/CreateOrUpdateContactService";
 import { ChatMessage } from "./agentLoop";
-import { createOpenAIChat, isOpenAIReady } from "./openAIChat";
+import { createEngineChat, isEngineReady } from "../AiEngineServices/engines";
 import { converse } from "./RunSdrAgentService";
 import { effectivePrompt, getSdrAgentSettings } from "./SdrAgentSettingsService";
 
@@ -20,8 +20,8 @@ const SimulateSdrAgentService = async ({
   contactName,
   contactNumber
 }: Input) => {
-  if (!(await isOpenAIReady())) {
-    throw new AppError("ERR_OPENAI_INACTIVE", 400);
+  if (!(await isEngineReady())) {
+    throw new AppError("ERR_AI_NO_ENGINE", 400);
   }
   if (!messages.length || messages[messages.length - 1].role !== "user") {
     throw new AppError("ERR_SDR_SIMULATE_NEEDS_USER_MESSAGE", 400);
@@ -50,7 +50,7 @@ const SimulateSdrAgentService = async ({
     settings,
     history,
     contact: { name, number },
-    chat: createOpenAIChat({
+    chat: createEngineChat({
       model: settings.model,
       temperature: settings.temperature,
       contactId: contact.id

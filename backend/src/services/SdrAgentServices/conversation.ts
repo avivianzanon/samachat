@@ -3,6 +3,7 @@ import { ChatMessage } from "./agentLoop";
 const MAX_CHUNKS = 3;
 
 interface HistoryRow {
+  id?: string;
   body?: string | null;
   fromMe: boolean;
   mediaType?: string | null;
@@ -10,12 +11,20 @@ interface HistoryRow {
 
 // Mensagens do lead viram "user"; as nossas (agente ou atendente) "assistant".
 // Midia sem texto vira uma marca, para o modelo saber que algo foi enviado.
-export const toChatHistory = (rows: HistoryRow[]): ChatMessage[] =>
+// Audio que foi transcrito entra como o texto falado.
+export const toChatHistory = (
+  rows: HistoryRow[],
+  transcripts?: Map<string, string>
+): ChatMessage[] =>
   rows
     .map(m => {
       const isText = !m.mediaType || m.mediaType === "chat";
+      const spoken =
+        !isText && m.id !== undefined && transcripts ? transcripts.get(m.id) : undefined;
       const content = isText
         ? String(m.body || "").trim()
+        : spoken
+        ? spoken
         : `[o lead enviou ${m.mediaType}; o conteudo nao pode ser lido]`;
       return {
         role: (m.fromMe ? "assistant" : "user") as "assistant" | "user",

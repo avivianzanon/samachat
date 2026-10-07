@@ -1,5 +1,6 @@
 import { logger } from "../../utils/logger";
-import { isOpenAIReady } from "./openAIChat";
+import { isAudioType } from "./audio";
+import { isEngineReady } from "../AiEngineServices/engines";
 import { decideSdrReply } from "./policy";
 import { SdrScheduler } from "./scheduler";
 import { getSdrAgentSettings } from "./SdrAgentSettingsService";
@@ -47,16 +48,19 @@ const HandleIncomingSdrMessageService = async ({
       ticket,
       contactNumber,
       fromMe,
-      hasText: (!mediaType || mediaType === "chat") && Boolean(String(messageBody || "").trim())
+      // Audio tambem conta: o agente transcreve e responde (ver RunSdrAgentService).
+      hasText:
+        isAudioType(mediaType) ||
+        ((!mediaType || mediaType === "chat") && Boolean(String(messageBody || "").trim()))
     });
     if (!decision.respond) {
       return { handled: false, reason: (decision as any).reason };
     }
 
-    // Sem OpenAI configurada o agente nao consegue responder: deixa o fluxo
+    // Sem nenhuma IA ativa o agente nao consegue responder: deixa o fluxo
     // normal (fila de atendentes) cuidar do lead.
-    if (!(await isOpenAIReady())) {
-      return { handled: false, reason: "openai_nao_configurada" };
+    if (!(await isEngineReady())) {
+      return { handled: false, reason: "nenhuma_ia_ativa" };
     }
 
     (await getScheduler()).schedule(ticket.id, settings.replyDelaySeconds);

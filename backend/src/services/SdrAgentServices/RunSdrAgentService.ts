@@ -1,13 +1,22 @@
+import fs from "fs";
 import Message from "../../models/Message";
+import SendWhatsAppMedia from "../WbotServices/SendWhatsAppMedia";
+import {
+  buildVoiceReplyFile,
+  isAudioType,
+  transcribeAudioFile,
+  voiceReplyEnabled
+} from "./audio";
 import SdrAgentSetting from "../../models/SdrAgentSetting";
 import { logger } from "../../utils/logger";
+import KanbanAutoMoveService from "../KanbanServices/KanbanAutoMoveService";
 import { sleep } from "../../utils/sleep";
 import { getAgendaConfig } from "../AgendaServices/AgendaConfigService";
 import CreateOpenAILogService from "../OpenAILogServices/CreateOpenAILogService";
 import ShowTicketService from "../TicketServices/ShowTicketService";
 import SendWhatsAppMessage from "../WbotServices/SendWhatsAppMessage";
 import { AgentLoopResult, ChatFn, ChatMessage, runAgentLoop } from "./agentLoop";
-import { createOpenAIChat } from "./openAIChat";
+import { createEngineChat } from "../AiEngineServices/engines";
 import { retrieveForConversation } from "../SdrKnowledgeServices/KnowledgeService";
 import { toChatHistory, splitReply } from "./conversation";
 import { decideSdrReply } from "./policy";
@@ -94,10 +103,24 @@ export const runSdrAgentForTicket = async (ticketId: number): Promise<void> => {
     order: [["createdAt", "DESC"]],
     limit: settings.maxHistoryMessages
   });
-  const history = toChatHistory(rows.reverse());
+  const ordered = rows.reverse();
+
+  // Audios do lead (os mais recentes) viram texto para o agente entender.
+  const transcripts = new Map<string, string>();
+  const recentAudios = ordered.filter(m => !m.fromMe && isAudioType(m.mediaType)).slice(-3);
+  for (const m of recentAudios) {
+    const file = m.getDataValue("mediaUrl");
+    if (!file) continue;
+    const text = await transcribeAudioFile(m.id, file);
+    if (text) transcripts.set(m.id, text);
+  }
+
+  const history = toChatHistory(ordered, transcripts);
   if (history.length === 0 || history[history.length - 1].role !== "user") {
     return; // nada novo do lead para responder
   }
+  const lastRow = ordered[ordered.length - 1];
+  const leadSentAudio = Boolean(lastRow && !lastRow.fromMe && isAudioType(lastRow.mediaType));
 
   const snapshotLast = await latestMessageId(ticketId);
   let transferred = false;
@@ -107,7 +130,7 @@ export const runSdrAgentForTicket = async (ticketId: number): Promise<void> => {
       settings,
       history,
       contact: ticket.contact,
-      chat: createOpenAIChat({
+      chat: createEngineChat({
         model: settings.model,
         temperature: settings.temperature,
         ticketId,
@@ -119,6 +142,7 @@ export const runSdrAgentForTicket = async (ticketId: number): Promise<void> => {
         onTransfer: async ({ reason, summary }) => {
           transferred = true;
           await ticket.update({ sdrAgentEnabled: false, status: "pending" });
+          await KanbanAutoMoveService(ticketId, "human");
           await CreateOpenAILogService({
             action: "sdr_transfer",
             status: "success",
@@ -144,10 +168,35 @@ export const runSdrAgentForTicket = async (ticketId: number): Promise<void> => {
     }
 
     const chunks = splitReply(result.reply);
-    for (let i = 0; i < chunks.length; i += 1) {
-      await SendWhatsAppMessage({ body: chunks[i], ticket });
-      if (i < chunks.length - 1) await sleep(CHUNK_DELAY_MS);
+
+    // Lead mandou audio e a voz esta ligada: responde falando. Se a voz falhar
+    // (chave, limite, rede), cai para texto: o lead nunca fica sem resposta.
+    let sentAsVoice = false;
+    if (leadSentAudio && (await voiceReplyEnabled())) {
+      const voice = await buildVoiceReplyFile(chunks.join(" "));
+      if (voice) {
+        try {
+          await SendWhatsAppMedia({ media: voice as any, ticket });
+          sentAsVoice = true;
+        } catch (err) {
+          logger.warn({ err, ticketId }, "[sdr] envio do audio falhou; mandando texto");
+          try {
+            fs.unlinkSync(voice.path);
+          } catch (e) {
+            // arquivo ja foi removido pelo envio
+          }
+        }
+      }
     }
+
+    if (!sentAsVoice) {
+      for (let i = 0; i < chunks.length; i += 1) {
+        await SendWhatsAppMessage({ body: chunks[i], ticket });
+        if (i < chunks.length - 1) await sleep(CHUNK_DELAY_MS);
+      }
+    }
+    // A IA respondeu: o atendimento entra na coluna "iniciado com IA" do pipeline.
+    if (!transferred) await KanbanAutoMoveService(ticketId, "ai");
   } catch (err) {
     // Falhou (OpenAI fora, chave invalida...): tira o agente deste ticket para
     // um humano assumir pelo fluxo normal, em vez de deixar o lead sem resposta.
@@ -155,5 +204,6 @@ export const runSdrAgentForTicket = async (ticketId: number): Promise<void> => {
     if (!transferred) {
       await ticket.update({ sdrAgentEnabled: false, status: "pending" });
     }
+    await KanbanAutoMoveService(ticketId, "human");
   }
 };

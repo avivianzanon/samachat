@@ -12,7 +12,18 @@ import CheckContactNumber from "../services/WbotServices/CheckNumber";
 import CheckIsValidContact from "../services/WbotServices/CheckIsValidContact";
 import GetProfilePicUrl from "../services/WbotServices/GetProfilePicUrl";
 import AppError from "../errors/AppError";
+import GetDefaultWhatsApp from "../helpers/GetDefaultWhatsApp";
 import GetContactService from "../services/ContactServices/GetContactService";
+
+// Existe alguma conexao de WhatsApp para validar numeros?
+const hasDefaultWhatsApp = async (): Promise<boolean> => {
+  try {
+    await GetDefaultWhatsApp();
+    return true;
+  } catch (err) {
+    return false;
+  }
+};
 
 type IndexQuery = {
   searchParam: string;
@@ -87,10 +98,16 @@ export const store = async (req: Request, res: Response): Promise<Response> => {
     throw new AppError(err.message);
   }
 
-  await CheckIsValidContact(newContact.number);
-  const validNumber: any = await CheckContactNumber(newContact.number);
-
-  const profilePicUrl = await GetProfilePicUrl(validNumber);
+  // Com WhatsApp conectado, confere o numero la (e busca a foto). Sem nenhuma
+  // conexao, cadastra o numero como foi digitado: o cadastro de contatos nao
+  // pode depender de o WhatsApp estar ligado.
+  let validNumber: any = newContact.number;
+  let profilePicUrl: string | undefined;
+  if (await hasDefaultWhatsApp()) {
+    await CheckIsValidContact(newContact.number);
+    validNumber = await CheckContactNumber(newContact.number);
+    profilePicUrl = await GetProfilePicUrl(validNumber);
+  }
 
   let name = newContact.name;
   let number = validNumber;
@@ -144,9 +161,18 @@ export const update = async (
     throw new AppError(err.message);
   }
 
-  await CheckIsValidContact(contactData.number);
-
   const { contactId } = req.params;
+
+  // So valida no WhatsApp quando o NUMERO mudou: trocar nome, e-mail ou tags
+  // nao precisa de conexao (e nao deve falhar por causa dela).
+  const current = await ShowContactService(contactId);
+  if (
+    contactData.number &&
+    contactData.number !== current.number &&
+    (await hasDefaultWhatsApp())
+  ) {
+    await CheckIsValidContact(contactData.number);
+  }
 
   const contact = await UpdateContactService({ contactData, contactId });
 

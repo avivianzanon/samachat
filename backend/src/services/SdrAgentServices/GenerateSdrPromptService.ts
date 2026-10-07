@@ -2,6 +2,7 @@ import AppError from "../../errors/AppError";
 import CreateOpenAILogService from "../OpenAILogServices/CreateOpenAILogService";
 import GetOpenAISettingsService from "../OpenAISettingsServices/GetOpenAISettingsService";
 import buildClient from "../OpenAI/OpenAIClient";
+import { engineComplete, getActiveEngine } from "../AiEngineServices/engines";
 import {
   buildMetaPrompt,
   cleanGeneratedPrompt,
@@ -34,6 +35,23 @@ const GenerateSdrPromptService = async (
 ): Promise<{ prompt: string; model: string }> => {
   if (missingFields(form).length) {
     throw new AppError("ERR_SDR_PROMPT_FIELDS_REQUIRED", 400);
+  }
+
+  const engine = await getActiveEngine();
+  if (!engine) throw new AppError("ERR_AI_NO_ENGINE", 400);
+
+  // Gemini ou Claude: gera o prompt com a IA que esta ativa.
+  if (engine !== "openai") {
+    const generated = await engineComplete(buildMetaPrompt(form), {
+      action: "sdr_generate_prompt",
+      maxTokens: 4000,
+      temperature: 0.4
+    });
+    const cleaned = cleanGeneratedPrompt(generated.text);
+    if (!looksLikePrompt(cleaned)) {
+      throw new AppError("ERR_SDR_PROMPT_GENERATION_FAILED", 502);
+    }
+    return { prompt: cleaned, model: generated.model };
   }
 
   const settings = await GetOpenAISettingsService();

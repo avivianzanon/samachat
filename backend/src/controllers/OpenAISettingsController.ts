@@ -5,6 +5,7 @@ import AppError from "../errors/AppError";
 import GetOpenAISettingsService from "../services/OpenAISettingsServices/GetOpenAISettingsService";
 import UpdateOpenAISettingsService from "../services/OpenAISettingsServices/UpdateOpenAISettingsService";
 import RunOpenAICompletionService from "../services/OpenAI/RunOpenAICompletionService";
+import { getOpenAIStatus } from "../services/IntegrationSettingsServices/IntegrationStatusService";
 
 export const show = async (req: Request, res: Response): Promise<Response> => {
   const settings = await GetOpenAISettingsService();
@@ -49,6 +50,9 @@ export const update = async (req: Request, res: Response): Promise<Response> => 
     apiKey: settings.apiKey ? "********" : null
   });
 };
+
+export const status = async (_req: Request, res: Response): Promise<Response> =>
+  res.status(200).json(await getOpenAIStatus());
 
 export const test = async (req: Request, res: Response): Promise<Response> => {
   const result = await RunOpenAICompletionService({
