@@ -525,6 +525,7 @@ const messages = {
           informatives: "Informativos",
           integrations: "Integraciones",
           openai: "OpenAI / IA",
+          sdrAgent: "Entrenamiento de IA",
           administration: "Administración",
           users: "Usuarios",
           settings: "Ajustes",

@@ -30,6 +30,7 @@ import AssignmentTurnedInOutlinedIcon from "@material-ui/icons/AssignmentTurnedI
 import FolderOutlinedIcon from "@material-ui/icons/FolderOutlined";
 import EventNoteOutlinedIcon from "@material-ui/icons/EventNoteOutlined";
 import AccountTreeOutlinedIcon from "@material-ui/icons/AccountTreeOutlined";
+import HeadsetMicOutlinedIcon from "@material-ui/icons/HeadsetMicOutlined";
 import MemoryOutlinedIcon from "@material-ui/icons/MemoryOutlined";
 import SearchIcon from "@material-ui/icons/Search";
 import { makeStyles } from "@material-ui/core/styles";
@@ -268,6 +269,7 @@ const MainListItems = (props) => {
     "sectors.view",
     "connections.view",
     "settings.view",
+    "sdrAgent.view",
   ]);
 
   const menuConfig = {
@@ -354,6 +356,12 @@ const MainListItems = (props) => {
       to: "/openai",
       icon: <MemoryOutlinedIcon />,
       permissions: ["openai.settings.view", "openai.use", "openai.logs.view"],
+    },
+    sdrAgent: {
+      labelKey: "mainDrawer.listItems.sdrAgent",
+      to: "/sdr-agent",
+      icon: <HeadsetMicOutlinedIcon />,
+      permissions: ["sdrAgent.view"],
     },
     apiAdmin: {
       labelKey: "mainDrawer.listItems.apiAdmin",
@@ -458,6 +466,8 @@ const MainListItems = (props) => {
               value={currentSearch}
               onChange={(event) => setSearch(event.target.value)}
               placeholder={i18n.t("mainDrawer.search.placeholder")}
+              type="search"
+              inputProps={{ autoComplete: "off", name: "menu-search" }}
               size="small"
               variant="outlined"
               fullWidth
@@ -476,20 +486,8 @@ const MainListItems = (props) => {
       )}
       {canAccessOperation && (
         <>
-          {isDrawerOpen && (
-            <ListItem
-              button
-              onClick={() => toggleGroup("operation")}
-              className={classes.groupHeader}
-            >
-              <ListItemText
-                primary={i18n.t("mainDrawer.groups.operation")}
-                primaryTypographyProps={{ className: classes.groupTitle }}
-              />
-            </ListItem>
-          )}
           <Collapse
-            in={isDrawerOpen ? openGroups.operation : true}
+            in
             timeout="auto"
             unmountOnExit
           >
@@ -536,20 +534,9 @@ const MainListItems = (props) => {
 
       {canAccessCommunication && (
         <>
-          {isDrawerOpen && (
-            <ListItem
-              button
-              onClick={() => toggleGroup("communication")}
-              className={classes.groupHeader}
-            >
-              <ListItemText
-                primary={i18n.t("mainDrawer.groups.communication")}
-                primaryTypographyProps={{ className: classes.groupTitle }}
-              />
-            </ListItem>
-          )}
+          <Divider />
           <Collapse
-            in={isDrawerOpen ? openGroups.communication : true}
+            in
             timeout="auto"
             unmountOnExit
           >
@@ -584,20 +571,9 @@ const MainListItems = (props) => {
 
       {canAccessGovernance && (
         <>
-          {isDrawerOpen && (
-            <ListItem
-              button
-              onClick={() => toggleGroup("governance")}
-              className={classes.groupHeader}
-            >
-              <ListItemText
-                primary={i18n.t("mainDrawer.groups.governance")}
-                primaryTypographyProps={{ className: classes.groupTitle }}
-              />
-            </ListItem>
-          )}
+          <Divider />
           <Collapse
-            in={isDrawerOpen ? openGroups.governance : true}
+            in
             timeout="auto"
             unmountOnExit
           >
@@ -615,6 +591,10 @@ const MainListItems = (props) => {
               )}
               {renderMenuItem(
                 "connections",
+                isDrawerOpen ? classes.nestedItem : classes.collapsedItem
+              )}
+              {renderMenuItem(
+                "sdrAgent",
                 isDrawerOpen ? classes.nestedItem : classes.collapsedItem
               )}
               {renderMenuItem(

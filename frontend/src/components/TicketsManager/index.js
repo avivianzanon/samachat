@@ -213,7 +213,7 @@ const TicketsManager = () => {
   const [tab, setTab] = useState("open");
   const [tabOpen, setTabOpen] = useState("open");
   const [newTicketModalOpen, setNewTicketModalOpen] = useState(false);
-  const [showAllTickets, setShowAllTickets] = useState(false);
+  const [showAllTickets, setShowAllTickets] = useState(true);
   const searchInputRef = useRef();
   const searchTimeoutRef = useRef();
   const { user } = useContext(AuthContext);
@@ -345,12 +345,6 @@ const TicketsManager = () => {
             classes={{ root: classes.tab }}
           />
           <Tab
-            value={"closed"}
-            icon={<CheckBoxIcon />}
-            label={i18n.t("tickets.tabs.closed.title")}
-            classes={{ root: classes.tab }}
-          />
-          <Tab
             value={"search"}
             icon={<SearchIcon />}
             label={i18n.t("tickets.tabs.search.title")}
@@ -381,33 +375,6 @@ const TicketsManager = () => {
               >
                 {i18n.t("ticketsManager.buttons.newTicket")}
               </Button>
-              <Can
-                role={user.profile}
-                perform="tickets-manager:showall"
-                yes={() => (
-                  <FormControlLabel
-                    className={classes.showAllControl}
-                    label={i18n.t("tickets.buttons.showAll")}
-                    labelPlacement="start"
-                    control={
-                      <Switch
-                        size="small"
-                        checked={showAllTickets}
-                        classes={{
-                          switchBase: classes.showAllSwitchBase,
-                          checked: classes.showAllSwitchChecked,
-                          track: classes.showAllSwitchTrack,
-                        }}
-                        onChange={() =>
-                          setShowAllTickets((prevState) => !prevState)
-                        }
-                        name="showAllTickets"
-                        color="primary"
-                      />
-                    }
-                  />
-                )}
-              />
             </div>
             <div className={classes.ticketOptionsSecondary}>
               <TagSelect
@@ -426,68 +393,15 @@ const TicketsManager = () => {
         )}
       </Paper>
       <TabPanel value={tab} name="open" className={classes.ticketsWrapper}>
-        <Tabs
-          value={tabOpen}
-          onChange={handleChangeTabOpen}
-          textColor="inherit"
-          variant="fullWidth"
-          className={classes.subTabs}
-          TabIndicatorProps={{ style: { display: "none" } }}
-        >
-          <Tab
-            label={
-              <Badge
-                className={classes.badge}
-                badgeContent={openCount}
-                color="primary"
-                classes={{ badge: classes.openBadge }}
-              >
-                {i18n.t("ticketsList.assignedHeader")}
-              </Badge>
-            }
-            value={"open"}
-            className={classes.subTab}
-          />
-          <Tab
-            label={
-              <Badge
-                className={classes.badge}
-                badgeContent={pendingCount}
-                color="secondary"
-                classes={{ badge: classes.pendingBadge }}
-              >
-                {i18n.t("ticketsList.pendingHeader")}
-              </Badge>
-            }
-            value={"pending"}
-            className={classes.subTab}
-          />
-        </Tabs>
         <Paper className={classes.ticketsWrapper}>
           <TicketsList
-            status="open"
-            showAll={showAllTickets}
+            status="active"
+            showAll={true}
             selectedQueueIds={selectedQueueIds}
             updateCount={(val) => setOpenCount(val)}
-            style={applyPanelStyle("open")}
-            selectedTagIds={selectedTagIds}
-          />
-          <TicketsList
-            status="pending"
-            selectedQueueIds={selectedQueueIds}
-            updateCount={(val) => setPendingCount(val)}
-            style={applyPanelStyle("pending")}
             selectedTagIds={selectedTagIds}
           />
         </Paper>
-      </TabPanel>
-      <TabPanel value={tab} name="closed" className={classes.ticketsWrapper}>
-        <TicketsList
-          status="closed"
-          showAll={true}
-          selectedQueueIds={selectedQueueIds}
-          selectedTagIds={selectedTagIds}
-        />
       </TabPanel>
       <TabPanel value={tab} name="search" className={classes.ticketsWrapper}>
         <TicketsList

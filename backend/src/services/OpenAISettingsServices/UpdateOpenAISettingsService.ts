@@ -1,3 +1,5 @@
+import AppError from "../../errors/AppError";
+import { activeEnginesExcept } from "../IntegrationSettingsServices/activeEngines";
 import OpenAISetting from "../../models/OpenAISetting";
 import GetOpenAISettingsService from "./GetOpenAISettingsService";
 
@@ -53,6 +55,20 @@ const UpdateOpenAISettingsService = async (
 
   if (data.apiKey !== undefined) {
     updatePayload.apiKey = data.apiKey || null;
+  }
+
+  // So fica ativa com uma chave cadastrada.
+  const finalKey =
+    data.apiKey !== undefined ? data.apiKey || null : settings.apiKey;
+  if (updatePayload.isActive && !finalKey) {
+    throw new AppError("ERR_OPENAI_ACTIVE_NEEDS_KEY", 400);
+  }
+
+  // Motor de IA: so um ativo (Gemini e Claude entram na mesma regra).
+  if (updatePayload.isActive && !settings.isActive) {
+    if ((await activeEnginesExcept("openai")).length > 0) {
+      throw new AppError("ERR_AI_ENGINE_ACTIVE", 409);
+    }
   }
 
   await settings.update(updatePayload);

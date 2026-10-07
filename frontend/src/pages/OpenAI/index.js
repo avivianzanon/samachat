@@ -22,6 +22,7 @@ import MainContainer from "../../components/MainContainer";
 import MainHeader from "../../components/MainHeader";
 import MainHeaderButtonsWrapper from "../../components/MainHeaderButtonsWrapper";
 import Title from "../../components/Title";
+import { StatusChip, useLiveStatus } from "../Settings/LiveStatus";
 
 import api from "../../services/api";
 import { i18n } from "../../translate/i18n";
@@ -42,7 +43,7 @@ const useStyles = makeStyles(theme => ({
     color: theme.palette.text.secondary
   },
   switchBase: {
-    color: "rgba(15, 23, 42, 0.28)",
+    color: "#e2e8f0",
     "&$switchChecked": {
       color: "#FF1919",
       "& + $switchTrack": {
@@ -53,8 +54,31 @@ const useStyles = makeStyles(theme => ({
   },
   switchChecked: {},
   switchTrack: {
-    backgroundColor: "rgba(15, 23, 42, 0.18)",
+    backgroundColor: "#64748b",
     opacity: 1,
+  },
+  embeddedActions: {
+    display: "flex",
+    gap: 8,
+    justifyContent: "flex-end",
+    flexWrap: "wrap"
+  },
+  testButton: {
+    color: "#b91c1c",
+    borderColor: "#b91c1c",
+    fontWeight: 600,
+    "&.Mui-disabled": {
+      color: "#475569",
+      borderColor: "#94a3b8",
+      backgroundColor: "#f1f5f9"
+    }
+  },
+  saveButton: {
+    fontWeight: 600,
+    "&.Mui-disabled": {
+      color: "#475569",
+      backgroundColor: "#e2e8f0"
+    }
   },
   embeddedRoot: {
     display: "flex",
@@ -63,7 +87,9 @@ const useStyles = makeStyles(theme => ({
   }
 }));
 
-const OpenAI = ({ embedded = false }) => {
+// simple: mostra so chave, ativo e modelo (usado em Configuracoes). O resto
+// (parametros avancados, laboratorio, logs) continua na pagina completa /openai.
+const OpenAI = ({ embedded = false, simple = false, onSaved }) => {
   const classes = useStyles();
 
   const [loading, setLoading] = useState(false);
@@ -93,6 +119,28 @@ const OpenAI = ({ embedded = false }) => {
 
   const [hasApiKey, setHasApiKey] = useState(false);
   const [clearApiKey, setClearApiKey] = useState(false);
+
+  // Status ao vivo (so na versao simples de Configuracoes).
+  const [statusTick, setStatusTick] = useState(0);
+  const live = useLiveStatus(simple ? "/openai/settings/status" : null, statusTick);
+
+  // Outra IA (Gemini/Claude) esta conversando com os leads? Entao a OpenAI nao pode ser ativada.
+  const [otherEngine, setOtherEngine] = useState(null);
+  useEffect(() => {
+    if (!simple) return undefined;
+    let alive = true;
+    (async () => {
+      try {
+        const { data } = await api.get("/ai-engine");
+        if (alive) setOtherEngine(data.active && data.active !== "openai" ? data.activeLabel : null);
+      } catch (err) {
+        // o servidor ainda barra a ativacao
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [simple, statusTick]);
 
   const [sandboxText, setSandboxText] = useState("");
   const [sandboxTicketId, setSandboxTicketId] = useState("");
@@ -195,6 +243,8 @@ const OpenAI = ({ embedded = false }) => {
       await api.put("/openai/settings", normalizedPayload);
       toast.success(i18n.t("openai.settings.saved"));
       await loadSettings();
+      setStatusTick(t => t + 1);
+      if (onSaved) onSaved();
     } catch (err) {
       toastError(err);
     }
@@ -275,6 +325,34 @@ const OpenAI = ({ embedded = false }) => {
         </MainHeader>
       )}
 
+      {embedded && (
+        <div className={classes.embeddedActions}>
+          {simple && (
+            <span style={{ marginRight: "auto", alignSelf: "center" }}>
+              <StatusChip status={live.status} checking={live.checking} />
+            </span>
+          )}
+          <Button
+            variant="outlined"
+            color="primary"
+            className={classes.testButton}
+            onClick={handleTest}
+            disabled={testing || loading || !settings.isActive || !hasValidKey}
+          >
+            {i18n.t("openai.settings.test")}
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            className={classes.saveButton}
+            onClick={handleSave}
+            disabled={saving || loading}
+          >
+            {i18n.t("openai.settings.save")}
+          </Button>
+        </div>
+      )}
+
       <Card className={classes.card} variant="outlined">
         <CardContent>
           <Typography variant="h6" className={classes.sectionTitle}>
@@ -288,42 +366,52 @@ const OpenAI = ({ embedded = false }) => {
               <TextField
                 label={i18n.t("openai.settings.apiKey")}
                 type="password"
+                inputProps={{ autoComplete: "new-password" }}
                 value={settings.apiKey}
                 onChange={event =>
                   setSettings(prev => ({ ...prev, apiKey: event.target.value }))
                 }
                 placeholder={
-                  hasApiKey ? i18n.t("openai.settings.apiKeyStored") : ""
+                  hasApiKey
+                    ? simple
+                      ? "••••••••••••••••"
+                      : i18n.t("openai.settings.apiKeyStored")
+                    : ""
                 }
                 helperText={
                   hasApiKey && !settings.apiKey
-                    ? i18n.t("openai.settings.apiKeyStored")
+                    ? simple
+                      ? "Cadastrada. Por segurança, ela não é exibida. Digite outra para substituir."
+                      : i18n.t("openai.settings.apiKeyStored")
                     : undefined
                 }
                 fullWidth
                 variant="outlined"
                 margin="dense"
               />
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={clearApiKey}
-                    classes={{
-                      switchBase: classes.switchBase,
-                      checked: classes.switchChecked,
-                      track: classes.switchTrack,
-                    }}
-                    onChange={event => setClearApiKey(event.target.checked)}
-                  />
-                }
-                label={i18n.t("openai.settings.clearKey")}
-              />
+              {!simple && (
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={clearApiKey}
+                      classes={{
+                        switchBase: classes.switchBase,
+                        checked: classes.switchChecked,
+                        track: classes.switchTrack,
+                      }}
+                      onChange={event => setClearApiKey(event.target.checked)}
+                    />
+                  }
+                  label={i18n.t("openai.settings.clearKey")}
+                />
+              )}
             </Grid>
             <Grid item xs={12} md={6}>
               <FormControlLabel
                 control={
                   <Switch
                     checked={settings.isActive}
+                    disabled={!settings.isActive && (!hasValidKey || Boolean(otherEngine))}
                     classes={{
                       switchBase: classes.switchBase,
                       checked: classes.switchChecked,
@@ -339,6 +427,13 @@ const OpenAI = ({ embedded = false }) => {
                 }
                 label={i18n.t("openai.settings.active")}
               />
+              {!settings.isActive && (otherEngine || !hasValidKey) && (
+                <Typography variant="caption" className={classes.muted} display="block">
+                  {otherEngine
+                    ? `Desative a ${otherEngine} para ativar esta IA. Só uma conversa com os leads.`
+                    : "Cadastre a chave para poder ativar."}
+                </Typography>
+              )}
               <TextField
                 label={i18n.t("openai.settings.model")}
                 value={settings.model}
@@ -350,6 +445,7 @@ const OpenAI = ({ embedded = false }) => {
                 margin="dense"
               />
             </Grid>
+            {!simple && (<>
             <Grid item xs={12} md={4}>
               <TextField
                 label={i18n.t("openai.settings.temperature")}
@@ -582,10 +678,12 @@ const OpenAI = ({ embedded = false }) => {
                 disabled={!settings.autoReplyEnabled}
               />
             </Grid>
+            </>)}
           </Grid>
         </CardContent>
       </Card>
 
+      {!simple && (<>
       <Card className={classes.card} variant="outlined">
         <CardContent>
           <Typography variant="h6" className={classes.sectionTitle}>
@@ -723,6 +821,7 @@ const OpenAI = ({ embedded = false }) => {
           </Table>
         </CardContent>
       </Card>
+      </>)}
     </>
   );
 

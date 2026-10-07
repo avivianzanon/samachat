@@ -1,10 +1,12 @@
 import AppError from "../../errors/AppError";
 import KanbanColumn from "../../models/KanbanColumn";
+import { AUTO_RULES } from "./KanbanAutoMoveService";
 
 interface ColumnData {
   name?: string;
   key?: string;
   isActive?: boolean;
+  autoRule?: string | null;
 }
 
 interface Request {
@@ -58,13 +60,22 @@ const UpdateKanbanColumnService = async ({
     }
   }
 
+  if (columnData.autoRule && !AUTO_RULES.includes(columnData.autoRule)) {
+    throw new AppError("ERR_KANBAN_INVALID_AUTO_RULE");
+  }
+
   await column.update({
     name: nextName ?? column.name,
     key: nextKey ?? column.key,
     isActive:
       typeof columnData.isActive === "boolean"
         ? columnData.isActive
-        : column.isActive
+        : column.isActive,
+    // undefined = nao mexe; "" ou null = remove a regra automatica
+    autoRule:
+      columnData.autoRule === undefined
+        ? column.autoRule
+        : columnData.autoRule || null
   });
 
   await column.reload();

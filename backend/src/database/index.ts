@@ -36,7 +36,17 @@ import FlowExecutionLog from "../models/FlowExecutionLog";
 import Schedule from "../models/Schedule";
 import ScheduleLog from "../models/ScheduleLog";
 import OpenAISetting from "../models/OpenAISetting";
+import IntegrationSetting from "../models/IntegrationSetting";
 import OpenAILog from "../models/OpenAILog";
+import AgendaSetting from "../models/AgendaSetting";
+import AgendaCloser from "../models/AgendaCloser";
+import AgendaAvailability from "../models/AgendaAvailability";
+import AgendaAppointment from "../models/AgendaAppointment";
+import AgendaEvent from "../models/AgendaEvent";
+import AgendaGoogleToken from "../models/AgendaGoogleToken";
+import SdrAgentSetting from "../models/SdrAgentSetting";
+import SdrKnowledgeFile from "../models/SdrKnowledgeFile";
+import SdrKnowledgeChunk from "../models/SdrKnowledgeChunk";
 
 // eslint-disable-next-line
 const dbConfig = require("../config/database");
@@ -82,7 +92,17 @@ const models = [
   Schedule,
   ScheduleLog,
   OpenAISetting,
-  OpenAILog
+  IntegrationSetting,
+  OpenAILog,
+  AgendaSetting,
+  AgendaCloser,
+  AgendaAvailability,
+  AgendaAppointment,
+  AgendaEvent,
+  AgendaGoogleToken,
+  SdrAgentSetting,
+  SdrKnowledgeFile,
+  SdrKnowledgeChunk
 ];
 
 sequelize.addModels(models);

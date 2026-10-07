@@ -69,6 +69,7 @@ const ColorPicker = ({ onChange, currentColor, handleClose, open }) => {
       onClose={handleClose}
       aria-labelledby="simple-dialog-title"
       open={open}
+      disableRestoreFocus
       maxWidth="xs"
       paperFullWidth
     >

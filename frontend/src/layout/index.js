@@ -433,6 +433,8 @@ const LoggedInLayout = ({ children }) => {
             value={menuSearch}
             onChange={(event) => setMenuSearch(event.target.value)}
             placeholder={i18n.t("mainDrawer.search.placeholder")}
+            type="search"
+            inputProps={{ autoComplete: "off", name: "menu-search" }}
             size="small"
             variant="outlined"
             className={classes.searchField}

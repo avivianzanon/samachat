@@ -19,6 +19,7 @@ import SearchIcon from "@material-ui/icons/Search";
 import TextField from "@material-ui/core/TextField";
 import InputAdornment from "@material-ui/core/InputAdornment";
 
+import BulkActionsMenu from "../../components/BulkActionsMenu";
 import IconButton from "@material-ui/core/IconButton";
 import DeleteOutlineIcon from "@material-ui/icons/DeleteOutline";
 import EditIcon from "@material-ui/icons/Edit";
@@ -307,7 +308,7 @@ const Contacts = () => {
       fetchContacts();
     }, 500);
     return () => clearTimeout(delayDebounceFn);
-  }, [searchParam, pageNumber]);
+  }, [searchParam, pageNumber, selectedTagIds]);
 
   useEffect(() => {
     const socket = openSocket();
@@ -443,14 +444,6 @@ const Contacts = () => {
     setConfirmOpen(true);
   };
 
-  const handleEditSelectedContact = () => {
-    if (selectedContactIds.length !== 1) {
-      return;
-    }
-
-    hadleEditContact(selectedContactIds[0]);
-  };
-
   const allVisibleSelected = contacts.length > 0 && selectedContactIds.length === contacts.length;
   const someVisibleSelected = selectedContactIds.length > 0 && !allVisibleSelected;
 
@@ -497,59 +490,53 @@ const Contacts = () => {
       <MainHeader>
         <div className={classes.headerTopRow}>
           <div className={classes.headerTitle}>
-            <Title>Clientes</Title>
+            <Title>{i18n.t("contacts.title")}</Title>
             <Typography className={classes.pageSubtitle}>
               {i18n.t("contacts.subtitle")}
             </Typography>
           </div>
+        </div>
+        <MainHeaderButtonsWrapper className={classes.headerBottomRow}>
           <TextField
-            placeholder={i18n.t("contacts.searchPlaceholder")}
+            placeholder="Buscar por nome, número ou e-mail..."
             type="search"
+            variant="outlined"
+            margin="dense"
             value={searchParam}
             onChange={handleSearch}
-            className={classes.searchField}
+            style={{ width: 280 }}
+            inputProps={{ autoComplete: "off", name: "contacts-search" }}
             InputProps={{
-              classes: { root: classes.searchInputRoot },
               startAdornment: (
                 <InputAdornment position="start">
-                  <SearchIcon style={{ color: "gray" }} />
+                  <SearchIcon fontSize="small" color="disabled" />
                 </InputAdornment>
               ),
             }}
           />
-        </div>
-        <MainHeaderButtonsWrapper className={classes.headerBottomRow}>
           <TagSelect
             selectedTagIds={selectedTagIds}
             onChange={setSelectedTagIds}
             label={i18n.t("contacts.tagsFilter")}
             style={{ minWidth: 200 }}
           />
-          {selectedContactIds.length > 0 && (
-            <Typography className={classes.selectionInfo}>
-              {selectedContactIds.length} selecionado(s)
-            </Typography>
-          )}
-          <Button
-            variant="contained"
-            className={classes.bulkActionButton}
-            disabled={selectedContactIds.length !== 1}
-            onClick={handleEditSelectedContact}
-          >
-            Editar selecionado
-          </Button>
           <Can
             role={user.profile}
             perform="contacts-page:deleteContact"
             yes={() => (
-              <Button
-                variant="contained"
-                className={classes.bulkActionButton}
-                disabled={selectedContactIds.length === 0}
-                onClick={handleOpenBulkDeleteConfirmation}
-              >
-                Excluir selecionados
-              </Button>
+              <BulkActionsMenu
+                count={selectedContactIds.length}
+                onClear={() => setSelectedContactIds([])}
+                actions={[
+                  { label: "Excluir selecionados", onClick: handleOpenBulkDeleteConfirmation },
+                ]}
+              />
+            )}
+            no={() => (
+              <BulkActionsMenu
+                count={selectedContactIds.length}
+                onClear={() => setSelectedContactIds([])}
+              />
             )}
           />
           <Button

@@ -26,7 +26,6 @@ import VcardPreview from "../VcardPreview";
 import LocationPreview from "../LocationPreview";
 import ModalImageCors from "../ModalImageCors";
 import MessageOptionsMenu from "../MessageOptionsMenu";
-import whatsBackground from "../../assets/wa-background.png";
 
 import api from "../../services/api";
 import toastError from "../../errors/toastError";
@@ -44,9 +43,8 @@ const useStyles = makeStyles((theme) => ({
   },
 
   messagesList: {
-    backgroundImage: `url(${whatsBackground})`,
-    backgroundColor: theme.custom.softBackground,
-    backgroundBlendMode: theme.palette.type === "dark" ? "multiply" : "normal",
+    backgroundImage: "none",
+    backgroundColor: theme.palette.type === "dark" ? theme.custom.softBackground : "#F5F6F8",
     display: "flex",
     flexDirection: "column",
     flexGrow: 1,

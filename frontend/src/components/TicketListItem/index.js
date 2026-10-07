@@ -1,3 +1,6 @@
+import SdrHandoffButtons from "../SdrHandoffButtons";
+import TicketOptionsMenu from "../TicketOptionsMenu";
+import MoreVertIcon from "@material-ui/icons/MoreVert";
 import React, { useState, useEffect, useRef, useContext } from "react";
 
 import { useHistory, useParams } from "react-router-dom";
@@ -79,8 +82,9 @@ const useStyles = makeStyles(theme => ({
 	contactNameWrapper: {
 		display: "flex",
 		justifyContent: "space-between",
-		alignItems: "flex-start",
-		gap: theme.spacing(1),
+		alignItems: "center",
+		flexWrap: "wrap",
+		gap: theme.spacing(0.5, 1),
 	},
 
 	lastMessageTime: {
@@ -175,6 +179,8 @@ const useStyles = makeStyles(theme => ({
 		boxShadow: "none",
 	},
 	contactName: {
+		flex: "1 1 130px",
+		minWidth: 0,
 		fontWeight: 700,
 		fontSize: "0.95rem",
 		lineHeight: 1.2,
@@ -206,9 +212,15 @@ const useStyles = makeStyles(theme => ({
 		fontWeight: 600,
 		border: `1px solid ${theme.palette.type === "dark" ? "rgba(255, 90, 95, 0.18)" : "rgba(229, 57, 53, 0.10)"}`,
 	},
+	actionIcons: {
+		display: "inline-flex",
+		alignItems: "center",
+		gap: 4,
+		flex: "none",
+		marginLeft: "auto",
+	},
 	tagButton: {
 		padding: 6,
-		marginLeft: 6,
 		backgroundColor: theme.custom.softBackground,
 		border: `1px solid ${theme.palette.divider}`,
 	},
@@ -222,6 +234,7 @@ const TicketListItem = ({ ticket, selectable = false, selectedInBulk = false, on
 	const isMounted = useRef(true);
 	const { user } = useContext(AuthContext);
 	const [tagsModalOpen, setTagsModalOpen] = useState(false);
+	const [optionsAnchor, setOptionsAnchor] = useState(null);
 
 	useEffect(() => {
 		return () => {
@@ -261,10 +274,7 @@ const TicketListItem = ({ ticket, selectable = false, selectedInBulk = false, on
 			<ListItem
 				dense
 				button
-				onClick={e => {
-					if (ticket.status === "pending") return;
-					handleSelectTicket(ticket.id);
-				}}
+				onClick={() => handleSelectTicket(ticket.id)}
 				selected={(ticketId && +ticketId === ticket.id) || selectedInBulk}
 				className={clsx(classes.ticket, {
 					[classes.pendingTicket]: ticket.status === "pending",
@@ -329,17 +339,39 @@ const TicketListItem = ({ ticket, selectable = false, selectedInBulk = false, on
 							{ticket.whatsappId && (
 								<div className={classes.userTag} title={i18n.t("ticketsList.connectionTitle")}>{ticket.whatsapp?.name}</div>
 							)}
-							<IconButton
-								size="small"
-								className={classes.tagButton}
-								onClick={e => {
-									e.stopPropagation();
-									setTagsModalOpen(true);
-								}}
-								title={i18n.t("ticketTagsModal.title")}
-							>
-								<LocalOfferIcon fontSize="small" />
-							</IconButton>
+							<span className={classes.actionIcons}>
+								<SdrHandoffButtons ticket={ticket} />
+								<IconButton
+									size="small"
+									className={classes.tagButton}
+									onClick={e => {
+										e.stopPropagation();
+										setTagsModalOpen(true);
+									}}
+									title={i18n.t("ticketTagsModal.title")}
+								>
+									<LocalOfferIcon fontSize="small" />
+								</IconButton>
+								<span onClick={e => e.stopPropagation()}>
+									<IconButton
+										size="small"
+										className={classes.tagButton}
+										onClick={e => {
+											e.stopPropagation();
+											setOptionsAnchor(e.currentTarget);
+										}}
+										title="Mais opcoes (transferir, excluir conversa)"
+									>
+										<MoreVertIcon fontSize="small" />
+									</IconButton>
+									<TicketOptionsMenu
+										ticket={ticket}
+										anchorEl={optionsAnchor}
+										menuOpen={Boolean(optionsAnchor)}
+										handleClose={() => setOptionsAnchor(null)}
+									/>
+								</span>
+							</span>
 						</span>
 					}
 					secondary={
@@ -359,12 +391,12 @@ const TicketListItem = ({ ticket, selectable = false, selectedInBulk = false, on
 							</Typography>
 							{ticket.tags && ticket.tags.length > 0 && (
 								<span className={classes.tagList}>
-									{ticket.tags.slice(0, 2).map(tag => (
+									{(ticket.tags || []).slice(0, 2).map(tag => (
 										<span key={tag.id} className={classes.tagChip}>
 											{tag.name}
 										</span>
 									))}
-									{ticket.tags.length > 2 && (
+									{(ticket.tags || []).length > 2 && (
 										<span className={classes.tagChip}>
 											+{ticket.tags.length - 2}
 										</span>
@@ -382,20 +414,6 @@ const TicketListItem = ({ ticket, selectable = false, selectedInBulk = false, on
 						</span>
 					}
 				/>
-				{ticket.status === "pending" && (
-					<ButtonWithSpinner
-						variant="contained"
-						className={classes.acceptButton}
-						size="small"
-						loading={loading}
-						onClick={e => {
-							e.stopPropagation();
-							handleAcepptTicket(ticket.id);
-						}}
-					>
-						{i18n.t("ticketsList.buttons.accept")}
-					</ButtonWithSpinner>
-				)}
 			</ListItem>
 			<Divider variant="inset" component="li" style={{ marginLeft: 32, marginRight: 24, opacity: 0.45 }} />
 		</React.Fragment>

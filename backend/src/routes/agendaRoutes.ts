@@ -1,0 +1,42 @@
+import express from "express";
+import isAuth from "../middleware/isAuth";
+import checkSectorPermission from "../middleware/checkSectorPermission";
+
+import isAgendaEventsAuth from "../middleware/isAgendaEventsAuth";
+
+import * as AgendaController from "../controllers/AgendaController";
+import * as AgendaEventsController from "../controllers/AgendaEventsController";
+import * as AgendaGoogleController from "../controllers/AgendaGoogleController";
+
+const agendaRoutes = express.Router();
+
+const view = [isAuth, checkSectorPermission("agenda.view")];
+const manage = [isAuth, checkSectorPermission("agenda.manage")];
+
+agendaRoutes.get("/agenda/config", ...view, AgendaController.showConfig);
+agendaRoutes.put("/agenda/config", ...manage, AgendaController.updateConfig);
+
+agendaRoutes.get("/agenda/closers", ...view, AgendaController.indexClosers);
+agendaRoutes.get("/agenda/closers/:id", ...view, AgendaController.showOneCloser);
+agendaRoutes.post("/agenda/closers", ...manage, AgendaController.storeCloser);
+agendaRoutes.put("/agenda/closers/:id", ...manage, AgendaController.updateOneCloser);
+agendaRoutes.delete("/agenda/closers/:id", ...manage, AgendaController.removeOneCloser);
+agendaRoutes.put("/agenda/closers/:id/availability", ...manage, AgendaController.putAvailability);
+
+agendaRoutes.get("/agenda/slots", ...view, AgendaController.slots);
+
+agendaRoutes.get("/agenda/appointments", ...view, AgendaController.indexAppointments);
+agendaRoutes.post("/agenda/appointments", ...manage, AgendaController.storeAppointment);
+agendaRoutes.put("/agenda/appointments/:id/reschedule", ...manage, AgendaController.reschedule);
+agendaRoutes.put("/agenda/appointments/:id/cancel", ...manage, AgendaController.cancel);
+
+// Google Calendar (OAuth por closer)
+agendaRoutes.get("/agenda/google/status", ...view, AgendaGoogleController.showStatus);
+agendaRoutes.get("/agenda/google/auth-url", ...manage, AgendaGoogleController.authUrl);
+agendaRoutes.get("/agenda/google/callback", AgendaGoogleController.callback);
+agendaRoutes.delete("/agenda/google/closers/:id", ...manage, AgendaGoogleController.remove);
+
+// Eventos externos (no-show etc.): segredo proprio, sem login de usuario.
+agendaRoutes.post("/agenda/events", isAgendaEventsAuth, AgendaEventsController.store);
+
+export default agendaRoutes;

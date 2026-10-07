@@ -20,6 +20,7 @@ import ShowWhatsAppService from "../services/WhatsappService/ShowWhatsAppService
 import UpdateTicketService from "../services/TicketServices/UpdateTicketService";
 import CreateContactService from "../services/ContactServices/CreateContactService";
 import HandleIncomingFlowMessageService from "../services/FlowExecutionServices/HandleIncomingFlowMessageService";
+import HandleIncomingSdrMessageService from "../services/SdrAgentServices/HandleIncomingSdrMessageService";
 
 import { whatsappProvider } from "../providers/WhatsApp/whatsappProvider";
 import { MessageType, MessageAck } from "../providers/WhatsApp/types";
@@ -361,8 +362,23 @@ export const handleMessage = async (
       }
     }
 
+    // Agente SDR: so assume quando ligado e permitido pela politica (desligado
+    // por padrao). Se assumir, a saudacao/fila de atendimento nao dispara.
+    let sdrHandled = false;
+    if (!flowHandled && !contextPayload.groupContact && !processedMessage.fromMe) {
+      const sdr = await HandleIncomingSdrMessageService({
+        ticket,
+        contactNumber: contact.number,
+        messageBody: processedMessage.body,
+        mediaType: processedMessage.type,
+        fromMe: processedMessage.fromMe
+      });
+      sdrHandled = sdr.handled;
+    }
+
     if (
       !flowHandled &&
+      !sdrHandled &&
       !ticket.queue &&
       !contextPayload.groupContact &&
       !processedMessage.fromMe &&

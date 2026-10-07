@@ -178,10 +178,8 @@ const QueueModal = ({ open, onClose, queueId }) => {
 									label={i18n.t("queueModal.form.color")}
 									name="color"
 									id="color"
-									onFocus={() => {
-										setColorPickerModalOpen(true);
-										greetingRef.current.focus();
-									}}
+									onClick={() => setColorPickerModalOpen(true)}
+									inputProps={{ readOnly: true, style: { cursor: "pointer" } }}
 									error={touched.color && Boolean(errors.color)}
 									helperText={
 										touched.color && errors.color

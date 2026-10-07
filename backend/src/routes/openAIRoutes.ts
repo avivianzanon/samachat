@@ -19,6 +19,12 @@ openAIRoutes.put(
 	checkSectorPermission("openai.settings.update"),
 	OpenAISettingsController.update
 );
+openAIRoutes.get(
+	"/openai/settings/status",
+	isAuth,
+	checkSectorPermission("openai.settings.view"),
+	OpenAISettingsController.status
+);
 openAIRoutes.post(
 	"/openai/settings/test",
 	isAuth,

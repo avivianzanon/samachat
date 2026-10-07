@@ -175,24 +175,11 @@ const TransferTicketModal = ({ modalOpen, onClose, ticketid, ticketWhatsappId })
 							/>
 						)}
 					/>
-					<FormControl variant="outlined" className={classes.maxWidth}>
-						<InputLabel>{i18n.t("transferTicketModal.fieldQueueLabel")}</InputLabel>
-						<Select
-							value={selectedQueue}
-							onChange={(e) => setSelectedQueue(e.target.value)}
-							label={i18n.t("transferTicketModal.fieldQueuePlaceholder")}
-						>
-							<MenuItem value={''}>&nbsp;</MenuItem>
-							{queues.map((queue) => (
-								<MenuItem key={queue.id} value={queue.id}>{queue.name}</MenuItem>
-							))}
-						</Select>
-					</FormControl>
 					<Can
 						role={loggedInUser.profile}
 						perform="ticket-options:transferWhatsapp"
 						yes={() => (!loadingWhatsapps && 
-							<FormControl variant="outlined" className={classes.maxWidth} style={{ marginTop: 20 }}>
+							<FormControl variant="outlined" className={classes.maxWidth}>
 								<InputLabel>{i18n.t("transferTicketModal.fieldConnectionLabel")}</InputLabel>
 								<Select
 									value={selectedWhatsapp}

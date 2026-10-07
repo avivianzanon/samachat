@@ -75,9 +75,11 @@ const ListTicketsService = async ({
   }
 
   if (status) {
+    // "open,pending" = todas as conversas ativas (sem separar aceitas e nao aceitas)
+    const statuses = String(status).split(",").map(x => x.trim()).filter(Boolean);
     whereCondition = {
       ...whereCondition,
-      status
+      status: statuses.length > 1 ? { [Op.in]: statuses } : statuses[0]
     };
   }
 

@@ -41,6 +41,13 @@ checkSectorPermission("kanban.columns.update"),
 	KanbanController.columnsUpdate
 );
 
+kanbanRoutes.delete(
+	"/kanban/columns/:columnId",
+	isAuth,
+	checkSectorPermission("kanban.columns.update"),
+	KanbanController.columnsRemove
+);
+
 kanbanRoutes.post(
 	"/kanban/move",
 	isAuth,

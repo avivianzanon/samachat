@@ -7,6 +7,7 @@ import ListKanbanColumnsService from "../services/KanbanServices/ListKanbanColum
 import CreateKanbanColumnService from "../services/KanbanServices/CreateKanbanColumnService";
 import UpdateKanbanColumnService from "../services/KanbanServices/UpdateKanbanColumnService";
 import ReorderKanbanColumnsService from "../services/KanbanServices/ReorderKanbanColumnsService";
+import DeleteKanbanColumnService from "../services/KanbanServices/DeleteKanbanColumnService";
 import AppError from "../errors/AppError";
 
 type IndexQuery = {
@@ -72,7 +73,8 @@ export const columnsStore = async (
   const schema = Yup.object().shape({
     name: Yup.string().required(),
     key: Yup.string().nullable(),
-    isActive: Yup.boolean()
+    isActive: Yup.boolean(),
+    autoRule: Yup.string().nullable()
   });
 
   try {
@@ -93,7 +95,8 @@ export const columnsUpdate = async (
   const schema = Yup.object().shape({
     name: Yup.string(),
     key: Yup.string().nullable(),
-    isActive: Yup.boolean()
+    isActive: Yup.boolean(),
+    autoRule: Yup.string().nullable()
   });
 
   try {
@@ -110,6 +113,15 @@ export const columnsUpdate = async (
   });
 
   return res.status(200).json(column);
+};
+
+export const columnsRemove = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
+  await DeleteKanbanColumnService(req.params.columnId);
+
+  return res.status(200).json({ success: true });
 };
 
 export const columnsReorder = async (

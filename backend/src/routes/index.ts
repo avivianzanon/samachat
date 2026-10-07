@@ -28,6 +28,10 @@ import flowExecutionRoutes from "./flowExecutionRoutes";
 import adminRoutes from "./adminRoutes";
 import openAIRoutes from "./openAIRoutes";
 import aiRoutes from "./aiRoutes";
+import agendaRoutes from "./agendaRoutes";
+import sdrAgentRoutes from "./sdrAgentRoutes";
+import integrationSettingsRoutes from "./integrationSettingsRoutes";
+import evolutionRoutes from "./evolutionRoutes";
 
 const routes = Router();
 
@@ -58,6 +62,10 @@ routes.use(flowExecutionRoutes);
 routes.use(adminRoutes);
 routes.use(openAIRoutes);
 routes.use(aiRoutes);
+routes.use(agendaRoutes);
+routes.use(sdrAgentRoutes);
+routes.use(integrationSettingsRoutes);
+routes.use(evolutionRoutes);
 routes.use("/api/messages", apiRoutes);
 
 export default routes;
