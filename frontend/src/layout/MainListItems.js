@@ -466,6 +466,8 @@ const MainListItems = (props) => {
               value={currentSearch}
               onChange={(event) => setSearch(event.target.value)}
               placeholder={i18n.t("mainDrawer.search.placeholder")}
+              type="search"
+              inputProps={{ autoComplete: "off", name: "menu-search" }}
               size="small"
               variant="outlined"
               fullWidth
@@ -484,20 +486,8 @@ const MainListItems = (props) => {
       )}
       {canAccessOperation && (
         <>
-          {isDrawerOpen && (
-            <ListItem
-              button
-              onClick={() => toggleGroup("operation")}
-              className={classes.groupHeader}
-            >
-              <ListItemText
-                primary={i18n.t("mainDrawer.groups.operation")}
-                primaryTypographyProps={{ className: classes.groupTitle }}
-              />
-            </ListItem>
-          )}
           <Collapse
-            in={isDrawerOpen ? openGroups.operation : true}
+            in
             timeout="auto"
             unmountOnExit
           >
@@ -544,20 +534,9 @@ const MainListItems = (props) => {
 
       {canAccessCommunication && (
         <>
-          {isDrawerOpen && (
-            <ListItem
-              button
-              onClick={() => toggleGroup("communication")}
-              className={classes.groupHeader}
-            >
-              <ListItemText
-                primary={i18n.t("mainDrawer.groups.communication")}
-                primaryTypographyProps={{ className: classes.groupTitle }}
-              />
-            </ListItem>
-          )}
+          <Divider />
           <Collapse
-            in={isDrawerOpen ? openGroups.communication : true}
+            in
             timeout="auto"
             unmountOnExit
           >
@@ -592,20 +571,9 @@ const MainListItems = (props) => {
 
       {canAccessGovernance && (
         <>
-          {isDrawerOpen && (
-            <ListItem
-              button
-              onClick={() => toggleGroup("governance")}
-              className={classes.groupHeader}
-            >
-              <ListItemText
-                primary={i18n.t("mainDrawer.groups.governance")}
-                primaryTypographyProps={{ className: classes.groupTitle }}
-              />
-            </ListItem>
-          )}
+          <Divider />
           <Collapse
-            in={isDrawerOpen ? openGroups.governance : true}
+            in
             timeout="auto"
             unmountOnExit
           >

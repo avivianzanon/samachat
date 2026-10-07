@@ -64,14 +64,16 @@ const ApiAdmin = ({ embedded = false }) => {
 
   return (
     <div className={embedded ? classes.rootEmbedded : classes.root}>
-      <Container className={embedded ? classes.containerEmbedded : classes.container} maxWidth="sm">
-        <div className={classes.pageHeader}>
-          <Typography variant="h6">{i18n.t("apiAdmin.title")}</Typography>
-          <Typography variant="body2" className={classes.pageSubtitle}>
-            {i18n.t("apiAdmin.description")}
-          </Typography>
-        </div>
-        <Paper className={classes.paper}>
+      <Container className={embedded ? classes.containerEmbedded : classes.container} maxWidth={embedded ? false : "sm"}>
+        {!embedded && (
+          <div className={classes.pageHeader}>
+            <Typography variant="h6">{i18n.t("apiAdmin.title")}</Typography>
+            <Typography variant="body2" className={classes.pageSubtitle}>
+              {i18n.t("apiAdmin.description")}
+            </Typography>
+          </div>
+        )}
+        <Paper className={classes.paper} elevation={embedded ? 0 : undefined} style={embedded ? { padding: 0, marginBottom: 0, background: "transparent" } : undefined}>
           <TextField
             id="api-token-setting"
             label={i18n.t("settings.apiToken.label")}
