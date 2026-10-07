@@ -257,7 +257,6 @@ const MessageInput = ({ ticketStatus }) => {
     useContext(ReplyMessageContext);
   const { user } = useContext(AuthContext);
 
-  const [signMessage, setSignMessage] = useLocalStorage("signOption", true);
 
   useEffect(() => {
     inputRef.current.focus();
@@ -368,9 +367,7 @@ const MessageInput = ({ ticketStatus }) => {
       read: 1,
       fromMe: true,
       mediaUrl: "",
-      body: signMessage
-        ? `*${user?.name}:*\n${inputMessage.trim()}`
-        : inputMessage.trim(),
+      body: inputMessage.trim(),
       quotedMsg: replyingMessage,
     };
     try {
@@ -637,26 +634,6 @@ const MessageInput = ({ ticketStatus }) => {
                 <AttachFileIcon className={classes.sendMessageIcons} />
               </IconButton>
             </label>
-            <FormControlLabel
-              style={{ marginRight: 7, color: "gray" }}
-              label={i18n.t("messagesInput.signMessage")}
-              labelPlacement="start"
-              control={
-                <Switch
-                  size="small"
-                  checked={signMessage}
-                  classes={{
-                    switchBase: classes.signSwitchBase,
-                    checked: classes.signSwitchChecked,
-                    track: classes.signSwitchTrack,
-                  }}
-                  onChange={e => {
-                    setSignMessage(e.target.checked);
-                  }}
-                  name="showAllTickets"
-                />
-              }
-            />
           </Hidden>
           <Hidden only={["md", "lg", "xl"]}>
             <IconButton
@@ -701,28 +678,6 @@ const MessageInput = ({ ticketStatus }) => {
                     <AttachFileIcon className={classes.sendMessageIcons} />
                   </IconButton>
                 </label>
-              </MenuItem>
-              <MenuItem onClick={handleMenuItemClick}>
-                <FormControlLabel
-                  style={{ marginRight: 7, color: "gray" }}
-                  label={i18n.t("messagesInput.signMessage")}
-                  labelPlacement="start"
-                  control={
-                    <Switch
-                      size="small"
-                      checked={signMessage}
-                      classes={{
-                        switchBase: classes.signSwitchBase,
-                        checked: classes.signSwitchChecked,
-                        track: classes.signSwitchTrack,
-                      }}
-                      onChange={e => {
-                        setSignMessage(e.target.checked);
-                      }}
-                      name="showAllTickets"
-                    />
-                  }
-                />
               </MenuItem>
             </Menu>
           </Hidden>

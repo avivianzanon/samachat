@@ -181,7 +181,7 @@ const PromptGeneratorDialog = ({ open, onClose, classes, agentName, companyName,
           </>
         ) : (
           <Button variant="contained" color="primary" onClick={generate} disabled={loading || missing}>
-            {missing ? "Preencha os campos com *" : "Gerar prompt"}
+            Gerar prompt
           </Button>
         )}
       </DialogActions>

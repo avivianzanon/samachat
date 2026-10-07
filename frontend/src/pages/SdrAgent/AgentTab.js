@@ -14,7 +14,6 @@ import {
 } from "@material-ui/core";
 
 import PromptGeneratorDialog from "./PromptGeneratorDialog";
-import SimulatorPanel from "./SimulatorPanel";
 
 const MODELS = [
   { value: "gpt-4o-mini", label: "gpt-4o-mini", note: "Rapido e economico. Tende a errar em contas e em conversas longas." },
@@ -63,7 +62,7 @@ const Check = ({ classes, ok, children }) => (
   </div>
 );
 
-const AgentTab = ({ classes, form, setField, change, openai, closersCount, dirty, save }) => {
+const AgentTab = ({ classes, form, setField, change, ai, closersCount, dirty, save }) => {
   const history = useHistory();
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
@@ -83,16 +82,11 @@ const AgentTab = ({ classes, form, setField, change, openai, closersCount, dirty
   const removeNumber = digits =>
     setField("allowedNumbers", numbers.filter(n => n !== digits).join("\n"));
 
-  const openaiLabel = openai.connected
-    ? "OpenAI conectada"
-    : openai.hasKey
-    ? "OpenAI com chave, mas desativada"
-    : "OpenAI sem chave";
-
-  const simulatorReady = hasPrompt && openai.connected;
-  const simulatorWarning = !hasPrompt
-    ? "Crie o prompt mestre (passo 4) para poder testar."
-    : "Conecte a OpenAI (passo 5) para poder testar.";
+  const aiLabel = ai.connected
+    ? `IA conectada: ${ai.label}`
+    : ai.anyKey
+    ? "IA com chave cadastrada, mas nenhuma ativa"
+    : "Nenhuma IA configurada";
 
   return (
     <>
@@ -113,16 +107,11 @@ const AgentTab = ({ classes, form, setField, change, openai, closersCount, dirty
           <Check classes={classes} ok={hasPrompt}>
             Prompt mestre criado {hasPrompt ? "" : "(passo 4)"}
           </Check>
-          <Check classes={classes} ok={openai.connected}>
-            {openaiLabel} {openai.connected ? "" : "(passo 5)"}
-          </Check>
-          <Check classes={classes} ok={closersCount > 0}>
-            {closersCount > 0
-              ? `Agenda com ${closersCount} closer(s) cadastrado(s)`
-              : "Nenhum closer cadastrado: o agente conversa, mas nao consegue agendar reunioes"}
+          <Check classes={classes} ok={ai.connected}>
+            {aiLabel} {ai.connected ? "" : "(passo 5)"}
           </Check>
         </div>
-        {form.isEnabled && (!hasPrompt || !openai.connected) && (
+        {form.isEnabled && (!hasPrompt || !ai.connected) && (
           <div className={classes.warnBox}>
             O agente esta ligado, mas ainda nao consegue responder: complete os itens marcados com "!" acima.
           </div>
@@ -201,49 +190,50 @@ const AgentTab = ({ classes, form, setField, change, openai, closersCount, dirty
           onChange={change("systemPrompt")}
           helperText={`${form.systemPrompt.length.toLocaleString("pt-BR")} caracteres`}
         />
-        <div className={classes.variables}>
-          {VARIABLES.map(([name, what]) => (
-            <Chip key={name} size="small" variant="outlined" label={`${name}  ${what}`} />
-          ))}
-        </div>
-        <Typography className={classes.hint} style={{ marginTop: 8 }}>
-          As variaveis acima sao preenchidas sozinhas a cada conversa. Use no texto do prompt.
-        </Typography>
       </Step>
 
       {/* 5 --------------------------------------------------------------- */}
       <Step classes={classes} number="5" title="Inteligencia artificial">
         <Typography className={classes.hint}>
-          O agente escreve as respostas usando a IA da OpenAI, com a <b>chave da sua conta</b>. Cada resposta
-          consome creditos dessa conta.
+          O agente escreve as respostas com a IA que estiver <b>ativa em Configuracoes &gt; APIs</b> (OpenAI,
+          Gemini ou Claude, so uma por vez), usando a <b>chave da sua conta</b>. Cada resposta consome
+          creditos dessa conta.
         </Typography>
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
           <Chip
-            color={openai.connected ? "primary" : "default"}
-            variant={openai.connected ? "default" : "outlined"}
-            label={openaiLabel}
+            color={ai.connected ? "primary" : "default"}
+            variant={ai.connected ? "default" : "outlined"}
+            label={aiLabel}
           />
-          <Button variant="outlined" size="small" onClick={() => history.push("/settings")}>
-            {openai.connected ? "Ver configuracao da chave" : "Configurar a chave (Configuracoes > IA)"}
+          <Button variant="outlined" size="small" onClick={() => history.push("/settings?secao=apis")}>
+            {ai.connected ? "Trocar ou ver a IA" : "Escolher a IA (Configuracoes > APIs)"}
           </Button>
         </div>
-        <TextField
-          select
-          fullWidth
-          label="Modelo de IA"
-          variant="outlined"
-          value={form.model}
-          onChange={change("model")}
-          helperText={modelNote || "Vazio = usa o modelo escolhido na configuracao da OpenAI"}
-        >
-          <MenuItem value="">Padrao da configuracao da OpenAI</MenuItem>
-          {MODELS.map(m => (
-            <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
-          ))}
-          {form.model && !MODELS.some(m => m.value === form.model) && (
-            <MenuItem value={form.model}>{form.model}</MenuItem>
-          )}
-        </TextField>
+        {ai.engine === "openai" ? (
+          <TextField
+            select
+            fullWidth
+            label="Modelo de IA"
+            variant="outlined"
+            value={form.model}
+            onChange={change("model")}
+            helperText={modelNote || "Vazio = usa o modelo escolhido na configuracao da OpenAI"}
+          >
+            <MenuItem value="">Padrao da configuracao da OpenAI</MenuItem>
+            {MODELS.map(m => (
+              <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
+            ))}
+            {form.model && !MODELS.some(m => m.value === form.model) && (
+              <MenuItem value={form.model}>{form.model}</MenuItem>
+            )}
+          </TextField>
+        ) : (
+          ai.connected && (
+            <Typography className={classes.hint}>
+              O modelo do {ai.label} e escolhido em Configuracoes &gt; APIs.
+            </Typography>
+          )
+        )}
       </Step>
 
       {/* 6 --------------------------------------------------------------- */}
@@ -287,16 +277,6 @@ const AgentTab = ({ classes, form, setField, change, openai, closersCount, dirty
             ))}
           </div>
         </Collapse>
-
-        <Typography className={classes.sectionLabel}>Conversar com o agente agora</Typography>
-        <SimulatorPanel
-          classes={classes}
-          agentName={form.agentName}
-          ready={simulatorReady}
-          notReadyText={simulatorWarning}
-          dirty={dirty}
-          onBeforeSend={save}
-        />
       </Step>
 
       {/* 7 --------------------------------------------------------------- */}

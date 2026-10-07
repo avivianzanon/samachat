@@ -1,7 +1,11 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
-import { Button, CircularProgress, Paper, Tab, Tabs } from "@material-ui/core";
+import { Button, CircularProgress, Paper } from "@material-ui/core";
+import AndroidIcon from "@material-ui/icons/Android";
+import MenuBookIcon from "@material-ui/icons/MenuBook";
+
+import PillTabs from "../../components/PillTabs";
 
 import MainContainer from "../../components/MainContainer";
 import MainHeader from "../../components/MainHeader";
@@ -67,7 +71,7 @@ const SdrAgent = () => {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [dirty, setDirty] = useState(false);
-  const [openai, setOpenai] = useState({ connected: false, hasKey: false });
+  const [ai, setAi] = useState({ connected: false, engine: null, label: null, anyKey: false });
   const [closersCount, setClosersCount] = useState(0);
 
   useEffect(() => {
@@ -79,10 +83,15 @@ const SdrAgent = () => {
         friendlyError(err);
       }
 
-      // Status da OpenAI e da agenda: so informam o "o que falta para ligar".
+      // Qual IA esta ativa e a agenda: so informam o "o que falta para ligar".
       try {
-        const { data } = await api.get("/openai/settings");
-        setOpenai({ connected: Boolean(data.isActive && data.apiKey), hasKey: Boolean(data.apiKey) });
+        const { data } = await api.get("/ai-engine");
+        setAi({
+          connected: Boolean(data.active),
+          engine: data.active,
+          label: data.activeLabel,
+          anyKey: (data.engines || []).some(e => e.configured)
+        });
       } catch (err) {
         /* sem permissao de ver: segue sem o status */
       }
@@ -149,19 +158,14 @@ const SdrAgent = () => {
     <MainContainer>
       {header}
       <Paper className={classes.paper} variant="outlined">
-        <Tabs
+        <PillTabs
           value={tab}
-          onChange={(e, value) => setTab(value)}
-          indicatorColor="primary"
-          textColor="primary"
-          variant="scrollable"
-          scrollButtons="auto"
-        >
-          <Tab value="agent" label="Agente" />
-          <Tab value="knowledge" label="Base de conhecimento" />
-        </Tabs>
-
-        <div style={{ height: 16 }} />
+          onChange={setTab}
+          tabs={[
+            { id: "agent", label: "Agente", icon: <AndroidIcon fontSize="small" /> },
+            { id: "knowledge", label: "Base de conhecimento", icon: <MenuBookIcon fontSize="small" /> }
+          ]}
+        />
 
         {tab === "agent" && (
           <AgentTab
@@ -169,7 +173,7 @@ const SdrAgent = () => {
             form={form}
             setField={setField}
             change={change}
-            openai={openai}
+            ai={ai}
             closersCount={closersCount}
             dirty={dirty}
             save={save}

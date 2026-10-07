@@ -39,15 +39,16 @@ const useStyles = makeStyles(theme => ({
 		borderColor: "#2563EB !important",
 		color: "#FFFFFF !important",
 	},
-	disabled: {
-		opacity: 0.4,
-	},
 }));
+
+const digits = value => String(value || "").replace(/\D/g, "");
 
 // Dois botoes so de icone: robo (IA atende) e pessoa (humano atende). O botao
 // do lado que esta atendendo fica colorido. Clicar no outro passa a conversa:
 // - Humano: voce assume na hora (ja pode responder; nao ha "aceitar").
-// - IA: devolve a conversa para o agente.
+// - IA: devolve a conversa para o agente. Antes de devolver, consulta o modulo
+//   Treinamento da IA NA HORA (agente ligado + prompt), sem confiar no estado
+//   guardado quando a tela abriu, que pode estar desatualizado.
 const SdrHandoffButtons = ({ ticket }) => {
 	const classes = useStyles();
 	const { user } = useContext(AuthContext);
@@ -63,7 +64,6 @@ const SdrHandoffButtons = ({ ticket }) => {
 
 	if (ticket.status === "closed") return null;
 
-	const aiAvailable = Boolean(status && status.isEnabled && status.hasPrompt);
 	const computed = effectiveSdrMode(ticket, status);
 	const mode = override || computed || (ticket.userId ? "human" : null);
 	const mine = ticket.status === "open" && ticket.userId === user?.id;
@@ -80,14 +80,56 @@ const SdrHandoffButtons = ({ ticket }) => {
 					: "Voce assumiu a conversa. A IA parou de responder."
 			);
 		} catch (err) {
-			toastError(err);
+			const code = err?.response?.data?.error;
+			if (code === "ERR_SDR_AGENT_DISABLED") {
+				invalidateSdrStatus();
+				toast.error("O agente de IA esta desligado. Ligue em Treinamento da IA > Agente e salve.");
+			} else if (code === "ERR_SDR_NO_PROMPT") {
+				invalidateSdrStatus();
+				toast.error("O agente ainda nao tem prompt. Crie o prompt em Treinamento da IA.");
+			} else {
+				toastError(err);
+			}
 		}
 		setBusy(false);
 	};
 
-	const onAi = e => {
+	const onAi = async e => {
 		e.stopPropagation();
-		if (!aiAvailable || mode === "ai" || busy) return;
+		if (mode === "ai" || busy) return;
+
+		// Consulta o estado atual do agente (nao o guardado).
+		setBusy(true);
+		let fresh = null;
+		try {
+			const { data } = await api.get("/sdr-agent/status");
+			fresh = data;
+			invalidateSdrStatus();
+		} catch (err) {
+			setBusy(false);
+			toastError(err);
+			return;
+		}
+		setBusy(false);
+
+		if (!fresh.isEnabled) {
+			toast.error("O agente de IA esta desligado. Ligue em Treinamento da IA > Agente e salve.");
+			return;
+		}
+		if (!fresh.hasPrompt) {
+			toast.error("O agente ainda nao tem prompt. Crie o prompt em Treinamento da IA.");
+			return;
+		}
+		if (fresh.testMode) {
+			const n = digits(ticket.contact && ticket.contact.number);
+			const listed = (fresh.allowedNumbers || []).some(a => n.endsWith(a) || a.endsWith(n));
+			if (!listed) {
+				toast.warning(
+					"O agente esta em modo teste e este numero nao esta na lista. A IA nao vai responder esta conversa ate o numero ser incluido."
+				);
+			}
+		}
+
 		if (ticket.userId) setConfirmOpen(true);
 		else change("ai");
 	};
@@ -98,11 +140,7 @@ const SdrHandoffButtons = ({ ticket }) => {
 		change("human");
 	};
 
-	const aiTitle = !aiAvailable
-		? "IA indisponivel: ligue o agente e crie o prompt em Treinamento da IA"
-		: mode === "ai"
-		? "A IA esta atendendo esta conversa"
-		: "Passar a conversa para a IA";
+	const aiTitle = mode === "ai" ? "A IA esta atendendo esta conversa" : "Passar a conversa para a IA";
 	const humanTitle = mine
 		? "Voce esta atendendo esta conversa"
 		: mode === "human"
@@ -114,7 +152,7 @@ const SdrHandoffButtons = ({ ticket }) => {
 			<span title={aiTitle}>
 				<IconButton
 					size="small"
-					className={`${classes.button} ${mode === "ai" ? classes.ai : ""} ${!aiAvailable ? classes.disabled : ""}`}
+					className={`${classes.button} ${mode === "ai" ? classes.ai : ""}`}
 					onClick={onAi}
 					disabled={busy}
 					aria-label="IA"
